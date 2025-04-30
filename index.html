@@ -1,8 +1,47 @@
-<!DOCTYPE html>
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, user-scalable=yes">
     <title>My Portfolio Globe</title>
     <style>
         body { 
@@ -52,32 +91,6 @@
             max-width: 200px; 
             word-wrap: break-word; 
         }
-        #zoom-controls {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 10;
-        }
-        .zoom-btn {
-            background: rgba(0, 0, 0, 0.6);
-            color: #ffffff;
-            font-family: 'Roboto', Arial, sans-serif;
-            font-size: 24px;
-            font-weight: 700;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 16px;
-            cursor: pointer;
-            transition: transform 0.2s ease, background 0.3s ease;
-            touch-action: manipulation;
-        }
-        .zoom-btn:hover {
-            transform: scale(1.1);
-            background: rgba(0, 0, 0, 0.8);
-        }
         #modal-overlay {
             position: fixed;
             top: 0;
@@ -121,9 +134,9 @@
             color: #fff;
             border: none;
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            font-size: 20px;
+            width: 40px;
+            height: 40px;
+            font-size: 24px;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -135,42 +148,33 @@
         }
         @media (max-width: 600px) {
             #info { 
-                font-size: 18px; 
+                font-size: 20px; 
                 top: 10px; 
                 left: 10px; 
                 padding: 8px 16px; 
             }
             #tooltip { 
-                font-size: 12px; 
+                font-size: 14px; 
                 padding: 8px 12px; 
                 max-width: 150px; 
             }
-            #zoom-controls {
-                bottom: 10px;
-                right: 10px;
-                gap: 8px;
-            }
-            .zoom-btn {
-                font-size: 18px;
-                padding: 6px 12px;
-            }
             #modal {
-                width: 90%;
-                height: 70%;
+                width: 95%;
+                height: 80%;
                 max-width: 95%;
-                max-height: 85%;
+                max-height: 90%;
                 padding: 20px;
             }
             #modal h1 {
-                font-size: 1.6em;
+                font-size: 1.8em;
             }
             #modal p {
-                font-size: 0.9em;
+                font-size: 1em;
             }
             #modal-close {
-                width: 25px;
-                height: 25px;
-                font-size: 16px;
+                width: 35px;
+                height: 35px;
+                font-size: 20px;
             }
         }
     </style>
@@ -178,10 +182,6 @@
 <body>
     <div id="info">My Skills Portfolio</div>
     <div id="tooltip"></div>
-    <div id="zoom-controls">
-        <button class="zoom-btn" id="zoom-in">+</button>
-        <button class="zoom-btn" id="zoom-out">−</button>
-    </div>
     <div id="modal-overlay">
         <div id="modal">
             <button id="modal-close">×</button>
@@ -196,8 +196,10 @@
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         document.body.appendChild(renderer.domElement);
-        const geometry = new THREE.IcosahedronGeometry(5, 1);
+        const isMobile = window.innerWidth < 600;
+        const geometry = new THREE.IcosahedronGeometry(isMobile ? 4 : 4.5, 1);
         const solidMaterial = new THREE.MeshStandardMaterial({ 
             color: 0xcccccc, 
             transparent: true, 
@@ -211,12 +213,12 @@
         const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
         const edges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
         sphere.add(edges);
-        const ambientLight = new THREE.AmbientLight(0x606060, 1.2);
+        const ambientLight = new THREE.AmbientLight(0x606060, 1.0);
         scene.add(ambientLight);
-        const pointLight = new THREE.PointLight(0xffffff, 2, 100);
+        const pointLight = new THREE.PointLight(0xffffff, 1.5, 100);
         pointLight.position.set(10, 10, 10);
         scene.add(pointLight);
-        camera.position.z = 10;
+        camera.position.z = isMobile ? 8 : 11;
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
@@ -225,7 +227,7 @@
         controls.autoRotate = true;
         controls.autoRotateSpeed = 0.5;
         controls.minDistance = 5;
-        controls.maxDistance = 20;
+        controls.maxDistance = isMobile ? 12 : 14;
         controls.addEventListener('start', () => {
             controls.autoRotate = false;
         });
@@ -233,23 +235,6 @@
             setTimeout(() => {
                 controls.autoRotate = true;
             }, 2000);
-        });
-        const zoomInBtn = document.getElementById('zoom-in');
-        const zoomOutBtn = document.getElementById('zoom-out');
-        const zoomStep = 0.5;
-        zoomInBtn.addEventListener('click', () => {
-            const currentDistance = camera.position.distanceTo(controls.target);
-            if (currentDistance > controls.minDistance + zoomStep) {
-                camera.position.addScaledVector(camera.position.clone().sub(controls.target).normalize(), -zoomStep);
-                controls.update();
-            }
-        });
-        zoomOutBtn.addEventListener('click', () => {
-            const currentDistance = camera.position.distanceTo(controls.target);
-            if (currentDistance < controls.maxDistance - zoomStep) {
-                camera.position.addScaledVector(camera.position.clone().sub(controls.target).normalize(), zoomStep);
-                controls.update();
-            }
         });
         const skills = [
             { name: "JavaScript", details: "Proficient in ES6+, used in web apps" },
@@ -314,12 +299,13 @@
                     .add(v3)
                     .divideScalar(3)
                     .multiplyScalar(1.05);
+                const textSize = window.innerWidth < 600 ? 0.25 : 0.35;
                 const textGeometry = new THREE.TextGeometry(skills[skillIndex].name, {
                     font: font,
-                    size: window.innerWidth < 600 ? 0.12 : 0.2,
+                    size: textSize,
                     height: 0.01
                 });
-                const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
                 const textMesh = new THREE.Mesh(textGeometry, textMaterial);
                 textGeometry.computeBoundingBox();
                 const textWidth = textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
