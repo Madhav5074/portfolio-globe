@@ -142,6 +142,8 @@
             align-items: center;
             justify-content: center;
             transition: background 0.3s ease;
+            z-index: 35;
+            touch-action: manipulation;
         }
         #modal-close:hover {
             background: #1a1a2e;
@@ -172,8 +174,8 @@
                 font-size: 1em;
             }
             #modal-close {
-                width: 35px;
-                height: 35px;
+                width: 40px;
+                height: 40px;
                 font-size: 20px;
             }
         }
@@ -218,7 +220,7 @@
         const pointLight = new THREE.PointLight(0xffffff, 1.5, 100);
         pointLight.position.set(10, 10, 10);
         scene.add(pointLight);
-        camera.position.z = isMobile ? 8 : 11;
+        camera.position.z = isMobile ? 10 : 11; // Zoomed out for mobile
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
@@ -227,7 +229,7 @@
         controls.autoRotate = true;
         controls.autoRotateSpeed = 0.5;
         controls.minDistance = 5;
-        controls.maxDistance = isMobile ? 12 : 14;
+        controls.maxDistance = isMobile ? 15 : 14; // More zoom-out room for mobile
         controls.addEventListener('start', () => {
             controls.autoRotate = false;
         });
@@ -360,6 +362,19 @@
                 }
             }
         }
+        function onClick(event) {
+            event.preventDefault();
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(textMeshes);
+            if (intersects.length > 0) {
+                const skill = intersects[0].object.userData.skill;
+                modalTitle.textContent = skill.name;
+                modalDetails.textContent = skill.details;
+                modalOverlay.style.display = 'flex';
+            }
+        }
         function onTouchStart(event) {
             event.preventDefault();
             const touch = event.touches[0];
@@ -374,22 +389,27 @@
                 modalOverlay.style.display = 'flex';
             }
         }
-        modalClose.addEventListener('click', () => {
+        function closeModal() {
             modalOverlay.style.display = 'none';
+        }
+        modalClose.addEventListener('click', closeModal);
+        modalClose.addEventListener('touchstart', (event) => {
+            event.preventDefault();
+            closeModal();
         });
         modalOverlay.addEventListener('click', (event) => {
             if (event.target === modalOverlay) {
-                modalOverlay.style.display = 'none';
+                closeModal();
             }
         });
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' && modalOverlay.style.display === 'flex') {
-                modalOverlay.style.display = 'none';
+                closeModal();
             }
         });
         window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('click', onClick);
         window.addEventListener('touchstart', onTouchStart, { passive: false });
-        window.addEventListener('click', onMouseMove);
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
