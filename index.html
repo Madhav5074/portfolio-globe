@@ -43,6 +43,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, user-scalable=yes">
     <title>My Portfolio Globe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         body { 
             margin: 0; 
@@ -52,44 +53,61 @@
             display: flex; 
             flex-direction: column; 
             touch-action: none;
+            font-family: 'Poppins', sans-serif;
         }
         canvas { 
             width: 100vw; 
             height: 100vh; 
             display: block; 
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.1));
         }
         #info { 
             position: absolute; 
             top: 20px; 
             left: 20px; 
             color: #ffffff; 
-            font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif; 
-            font-size: 28px; 
+            font-family: 'Poppins', sans-serif; 
+            font-size: 32px; 
             font-weight: 700;
-            background: rgba(0, 0, 0, 0.6); 
-            padding: 12px 24px; 
-            border-radius: 10px; 
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8); 
+            background: rgba(0, 0, 0, 0.7); 
+            padding: 15px 30px; 
+            border-radius: 12px; 
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.9); 
             z-index: 10; 
-            transition: transform 0.3s ease; 
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+            animation: fadeIn 1s ease-in-out;
+            backdrop-filter: blur(8px);
         }
         #info:hover {
-            transform: scale(1.1); 
+            transform: translateY(-5px) scale(1.05); 
+            background: rgba(0, 0, 0, 0.85); 
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+        #info-note {
+            font-size: 16px;
+            font-weight: 400;
+            color: #e0e0ff;
+            margin-top: 8px;
+            display: block;
+            animation: pulse 2s infinite ease-in-out;
         }
         #tooltip { 
             position: absolute; 
-            background: rgba(0, 0, 0, 0.9); 
+            background: rgba(0, 0, 0, 0.95); 
             color: #ffffff; 
-            font-family: 'Roboto', Arial, sans-serif; 
+            font-family: 'Poppins', sans-serif; 
             font-size: 16px; 
-            padding: 10px 15px; 
-            border-radius: 8px; 
+            font-weight: 400;
+            padding: 12px 18px; 
+            border-radius: 10px; 
             pointer-events: none; 
             z-index: 20; 
             display: none; 
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5); 
-            max-width: 200px; 
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6); 
+            max-width: 220px; 
             word-wrap: break-word; 
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            animation: tooltipPop 0.3s ease-out;
         }
         #modal-overlay {
             position: fixed;
@@ -97,92 +115,134 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.75);
             display: none;
             z-index: 30;
             align-items: center;
             justify-content: center;
+            animation: fadeInOverlay 0.5s ease-in-out;
         }
         #modal {
-            background: #fff;
+            background: linear-gradient(145deg, #ffffff, #f0f0f5);
             width: 50%;
             height: 50%;
             max-width: 800px;
             max-height: 600px;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
             position: relative;
-            font-family: 'Roboto', Arial, sans-serif;
+            font-family: 'Poppins', sans-serif;
             overflow-y: auto;
+            transform: scale(0.8);
+            animation: modalPop 0.4s ease-out forwards;
+            z-index: 31;
         }
         #modal h1 {
             color: #2a2a4e;
             margin-bottom: 20px;
-            font-size: 2.5em;
+            font-size: 2.8em;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
         }
         #modal p {
             color: #333;
-            line-height: 1.6;
-            font-size: 1.2em;
+            line-height: 1.8;
+            font-size: 1.3em;
+            font-weight: 400;
         }
         #modal-close {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 15px;
+            right: 15px;
             background: #2a2a4e;
             color: #fff;
             border: none;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            font-size: 24px;
+            width: 48px;
+            height: 48px;
+            font-size: 28px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background 0.3s ease;
+            transition: all 0.3s ease;
             z-index: 35;
             touch-action: manipulation;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            pointer-events: auto;
         }
         #modal-close:hover {
             background: #1a1a2e;
+            transform: rotate(90deg) scale(1.1);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes tooltipPop {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes fadeInOverlay {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
         }
         @media (max-width: 600px) {
             #info { 
-                font-size: 20px; 
-                top: 10px; 
-                left: 10px; 
-                padding: 8px 16px; 
+                font-size: 24px; 
+                top: 12px; 
+                left: 12px; 
+                padding: 10px 20px; 
+                border-radius: 10px;
+            }
+            #info-note {
+                font-size: 12px;
+                margin-top: 6px;
             }
             #tooltip { 
                 font-size: 14px; 
-                padding: 8px 12px; 
-                max-width: 150px; 
+                padding: 10px 14px; 
+                max-width: 180px; 
             }
             #modal {
-                width: 95%;
+                width: 90%;
                 height: 80%;
-                max-width: 95%;
-                max-height: 90%;
-                padding: 20px;
+                max-width: 90%;
+                max-height: 85%;
+                padding: 25px;
+                border-radius: 12px;
             }
             #modal h1 {
-                font-size: 1.8em;
+                font-size: 2em;
             }
             #modal p {
-                font-size: 1em;
+                font-size: 1.1em;
             }
             #modal-close {
                 width: 40px;
                 height: 40px;
-                font-size: 20px;
+                font-size: 24px;
             }
         }
     </style>
 </head>
 <body>
-    <div id="info">My Skills Portfolio</div>
+    <div id="info">
+        My Skills Portfolio
+        <span id="info-note">Click a skill to learn more!</span>
+    </div>
     <div id="tooltip"></div>
     <div id="modal-overlay">
         <div id="modal">
@@ -191,6 +251,38 @@
             <p id="modal-details"></p>
         </div>
     </div>
+    <script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script>
@@ -220,7 +312,7 @@
         const pointLight = new THREE.PointLight(0xffffff, 1.5, 100);
         pointLight.position.set(10, 10, 10);
         scene.add(pointLight);
-        camera.position.z = isMobile ? 10 : 11; // Zoomed out for mobile
+        camera.position.z = isMobile ? 10 : 11;
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
@@ -229,14 +321,16 @@
         controls.autoRotate = true;
         controls.autoRotateSpeed = 0.5;
         controls.minDistance = 5;
-        controls.maxDistance = isMobile ? 15 : 14; // More zoom-out room for mobile
+        controls.maxDistance = isMobile ? 15 : 14;
         controls.addEventListener('start', () => {
             controls.autoRotate = false;
         });
         controls.addEventListener('end', () => {
             setTimeout(() => {
-                controls.autoRotate = true;
-            }, 2000);
+                if (modalOverlay.style.display !== 'flex') {
+                    controls.autoRotate = true;
+                }
+            }, 5000); // 5 seconds pause
         });
         const skills = [
             { name: "JavaScript", details: "Proficient in ES6+, used in web apps" },
@@ -320,8 +414,11 @@
             });
         });
         const raycaster = new THREE.Raycaster();
+        raycaster.params.Mesh.threshold = 0.1;
         const mouse = new THREE.Vector2();
         let hoveredMesh = null;
+        let lastClickTime = 0;
+        const clickDebounce = 300;
         const tooltip = document.getElementById('tooltip');
         const modalOverlay = document.getElementById('modal-overlay');
         const modalTitle = document.getElementById('modal-title');
@@ -364,6 +461,10 @@
         }
         function onClick(event) {
             event.preventDefault();
+            event.stopPropagation();
+            const currentTime = Date.now();
+            if (currentTime - lastClickTime < clickDebounce) return;
+            lastClickTime = currentTime;
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
@@ -373,6 +474,13 @@
                 modalTitle.textContent = skill.name;
                 modalDetails.textContent = skill.details;
                 modalOverlay.style.display = 'flex';
+                controls.enabled = false; // Disable OrbitControls when modal is open
+                controls.autoRotate = false;
+                setTimeout(() => {
+                    if (modalOverlay.style.display !== 'flex') {
+                        controls.autoRotate = true;
+                    }
+                }, 5000); // 5 seconds pause
             }
         }
         function onTouchStart(event) {
@@ -387,27 +495,55 @@
                 modalTitle.textContent = skill.name;
                 modalDetails.textContent = skill.details;
                 modalOverlay.style.display = 'flex';
+                controls.enabled = false; // Disable OrbitControls when modal is open
+                controls.autoRotate = false;
+                setTimeout(() => {
+                    if (modalOverlay.style.display !== 'flex') {
+                        controls.autoRotate = true;
+                    }
+                }, 5000); // 5 seconds pause
             }
         }
-        function closeModal() {
+        function closeModal(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
             modalOverlay.style.display = 'none';
+            controls.enabled = true; // Re-enable OrbitControls
+            setTimeout(() => {
+                controls.autoRotate = true;
+            }, 5000); // 5 seconds pause after closing
+            // Fallback to ensure modal closes
+            setTimeout(() => {
+                if (modalOverlay.style.display !== 'none') {
+                    modalOverlay.style.display = 'none';
+                }
+            }, 500);
         }
-        modalClose.addEventListener('click', closeModal);
+        modalClose.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            closeModal(event);
+        });
         modalClose.addEventListener('touchstart', (event) => {
             event.preventDefault();
-            closeModal();
-        });
+            closeModal(event);
+        }, { passive: false });
         modalOverlay.addEventListener('click', (event) => {
             if (event.target === modalOverlay) {
-                closeModal();
+                closeModal(event);
             }
+        });
+        document.getElementById('modal').addEventListener('click', (event) => {
+            event.stopPropagation(); // Prevent clicks inside modal from bubbling to overlay
         });
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' && modalOverlay.style.display === 'flex') {
-                closeModal();
+                closeModal(event);
             }
         });
-        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mousemove', onMouseMove, { passive: false });
         window.addEventListener('click', onClick);
         window.addEventListener('touchstart', onTouchStart, { passive: false });
         function animate() {
@@ -426,5 +562,6 @@
         }
         window.addEventListener('resize', onWindowResize);
     </script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9385b8580fc0b037',t:'MTc0NjAwMjI3Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
