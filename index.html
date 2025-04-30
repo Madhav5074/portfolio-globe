@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>My Portfolio Globe</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: radial-gradient(circle at center, #2a2a4e 0%, #1a1a2e 100%);
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            touch-action: none;
+        }
+        canvas { 
+            width: 100vw; 
+            height: 100vh; 
+            display: block; 
+        }
+        #info { 
+            position: absolute; 
+            top: 20px; 
+            left: 20px; 
+            color: #ffffff; 
+            font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif; 
+            font-size: 28px; 
+            font-weight: 700;
+            background: rgba(0, 0, 0, 0.6); 
+            padding: 12px 24px; 
+            border-radius: 10px; 
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8); 
+            z-index: 10; 
+            transition: transform 0.3s ease; 
+        }
+        #info:hover {
+            transform: scale(1.1); 
+        }
+        #tooltip { 
+            position: absolute; 
+            background: rgba(0, 0, 0, 0.9); 
+            color: #ffffff; 
+            font-family: 'Roboto', Arial, sans-serif; 
+            font-size: 16px; 
+            padding: 10px 15px; 
+            border-radius: 8px; 
+            pointer-events: none; 
+            z-index: 20; 
+            display: none; 
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5); 
+            max-width: 200px; 
+            word-wrap: break-word; 
+        }
+        #zoom-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10;
+        }
+        .zoom-btn {
+            background: rgba(0, 0, 0, 0.6);
+            color: #ffffff;
+            font-family: 'Roboto', Arial, sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.3s ease;
+            touch-action: manipulation;
+        }
+        .zoom-btn:hover {
+            transform: scale(1.1);
+            background: rgba(0, 0, 0, 0.8);
+        }
+        #modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            z-index: 30;
+            align-items: center;
+            justify-content: center;
+        }
+        #modal {
+            background: #fff;
+            width: 50%;
+            height: 50%;
+            max-width: 800px;
+            max-height: 600px;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+            font-family: 'Roboto', Arial, sans-serif;
+            overflow-y: auto;
+        }
+        #modal h1 {
+            color: #2a2a4e;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+        #modal p {
+            color: #333;
+            line-height: 1.6;
+            font-size: 1.2em;
+        }
+        #modal-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #2a2a4e;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease;
+        }
+        #modal-close:hover {
+            background: #1a1a2e;
+        }
+        @media (max-width: 600px) {
+            #info { 
+                font-size: 18px; 
+                top: 10px; 
+                left: 10px; 
+                padding: 8px 16px; 
+            }
+            #tooltip { 
+                font-size: 12px; 
+                padding: 8px 12px; 
+                max-width: 150px; 
+            }
+            #zoom-controls {
+                bottom: 10px;
+                right: 10px;
+                gap: 8px;
+            }
+            .zoom-btn {
+                font-size: 18px;
+                padding: 6px 12px;
+            }
+            #modal {
+                width: 90%;
+                height: 70%;
+                max-width: 95%;
+                max-height: 85%;
+                padding: 20px;
+            }
+            #modal h1 {
+                font-size: 1.6em;
+            }
+            #modal p {
+                font-size: 0.9em;
+            }
+            #modal-close {
+                width: 25px;
+                height: 25px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="info">My Skills Portfolio</div>
+    <div id="tooltip"></div>
+    <div id="zoom-controls">
+        <button class="zoom-btn" id="zoom-in">+</button>
+        <button class="zoom-btn" id="zoom-out">−</button>
+    </div>
+    <div id="modal-overlay">
+        <div id="modal">
+            <button id="modal-close">×</button>
+            <h1 id="modal-title"></h1>
+            <p id="modal-details"></p>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script>
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+        const geometry = new THREE.IcosahedronGeometry(5, 1);
+        const solidMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xcccccc, 
+            transparent: true, 
+            opacity: 0.8, 
+            roughness: 0.2, 
+            metalness: 0.3 
+        });
+        const sphere = new THREE.Mesh(geometry, solidMaterial);
+        scene.add(sphere);
+        const edgesGeometry = new THREE.EdgesGeometry(geometry);
+        const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
+        const edges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+        sphere.add(edges);
+        const ambientLight = new THREE.AmbientLight(0x606060, 1.2);
+        scene.add(ambientLight);
+        const pointLight = new THREE.PointLight(0xffffff, 2, 100);
+        pointLight.position.set(10, 10, 10);
+        scene.add(pointLight);
+        camera.position.z = 10;
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.enableZoom = true;
+        controls.enablePan = false;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.5;
+        controls.minDistance = 5;
+        controls.maxDistance = 20;
+        controls.addEventListener('start', () => {
+            controls.autoRotate = false;
+        });
+        controls.addEventListener('end', () => {
+            setTimeout(() => {
+                controls.autoRotate = true;
+            }, 2000);
+        });
+        const zoomInBtn = document.getElementById('zoom-in');
+        const zoomOutBtn = document.getElementById('zoom-out');
+        const zoomStep = 0.5;
+        zoomInBtn.addEventListener('click', () => {
+            const currentDistance = camera.position.distanceTo(controls.target);
+            if (currentDistance > controls.minDistance + zoomStep) {
+                camera.position.addScaledVector(camera.position.clone().sub(controls.target).normalize(), -zoomStep);
+                controls.update();
+            }
+        });
+        zoomOutBtn.addEventListener('click', () => {
+            const currentDistance = camera.position.distanceTo(controls.target);
+            if (currentDistance < controls.maxDistance - zoomStep) {
+                camera.position.addScaledVector(camera.position.clone().sub(controls.target).normalize(), zoomStep);
+                controls.update();
+            }
+        });
+        const skills = [
+            { name: "JavaScript", details: "Proficient in ES6+, used in web apps" },
+            { name: "CSS", details: "Expert in animations and responsive design" },
+            { name: "HTML", details: "Semantic markup and accessibility" },
+            { name: "Python", details: "Used for scripting and data analysis" },
+            { name: "React", details: "Built dynamic SPAs with React" },
+            { name: "Node.js", details: "Backend development with Express" },
+            { name: "SQL", details: "Database design and optimization" },
+            { name: "Git", details: "Version control and collaboration" },
+            { name: "Three.js", details: "3D visualizations and animations" },
+            { name: "TypeScript", details: "Type-safe JavaScript development" },
+            { name: "AWS", details: "Cloud deployment and management" },
+            { name: "Docker", details: "Containerization for scalable apps" },
+            { name: "Vue.js", details: "Lightweight front-end framework" },
+            { name: "Angular", details: "Enterprise-level applications" },
+            { name: "MongoDB", details: "NoSQL database management" },
+            { name: "Express", details: "Fast backend API development" },
+            { name: "Firebase", details: "Real-time backend services" },
+            { name: "GraphQL", details: "Efficient API querying" },
+            { name: "Webpack", details: "Module bundling and optimization" },
+            { name: "Babel", details: "JavaScript transpilation" }
+        ];
+        const textMeshes = [];
+        const loader = new THREE.FontLoader();
+        loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
+            const positions = geometry.attributes.position.array;
+            const vertexCount = positions.length / 3;
+            const faceCount = vertexCount / 3;
+            const totalFaces = faceCount;
+            const skillCount = skills.length;
+            const interval = Math.floor(totalFaces / skillCount);
+            const selectedFaceIndices = [];
+            let currentIndex = 0;
+            for (let i = 0; i < skillCount; i++) {
+                currentIndex += interval + Math.floor(Math.random() * 3 - 1);
+                if (currentIndex >= totalFaces) currentIndex = currentIndex % totalFaces;
+                while (selectedFaceIndices.includes(currentIndex)) {
+                    currentIndex = (currentIndex + 1) % totalFaces;
+                }
+                selectedFaceIndices.push(currentIndex);
+            }
+            selectedFaceIndices.forEach((faceIndex, skillIndex) => {
+                const v1 = new THREE.Vector3(
+                    positions[faceIndex * 9 + 0],
+                    positions[faceIndex * 9 + 1],
+                    positions[faceIndex * 9 + 2]
+                );
+                const v2 = new THREE.Vector3(
+                    positions[faceIndex * 9 + 3],
+                    positions[faceIndex * 9 + 4],
+                    positions[faceIndex * 9 + 5]
+                );
+                const v3 = new THREE.Vector3(
+                    positions[faceIndex * 9 + 6],
+                    positions[faceIndex * 9 + 7],
+                    positions[faceIndex * 9 + 8]
+                );
+                const centroid = new THREE.Vector3()
+                    .add(v1)
+                    .add(v2)
+                    .add(v3)
+                    .divideScalar(3)
+                    .multiplyScalar(1.05);
+                const textGeometry = new THREE.TextGeometry(skills[skillIndex].name, {
+                    font: font,
+                    size: window.innerWidth < 600 ? 0.12 : 0.2,
+                    height: 0.01
+                });
+                const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+                textGeometry.computeBoundingBox();
+                const textWidth = textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
+                textMesh.position.copy(centroid);
+                textMesh.translateX(-textWidth / 2);
+                textMesh.lookAt(camera.position);
+                textMesh.userData = { skill: skills[skillIndex], faceIndex: skillIndex };
+                sphere.add(textMesh);
+                textMeshes.push(textMesh);
+            });
+        });
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let hoveredMesh = null;
+        const tooltip = document.getElementById('tooltip');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDetails = document.getElementById('modal-details');
+        const modalClose = document.getElementById('modal-close');
+        function onMouseMove(event) {
+            event.preventDefault();
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(textMeshes);
+            if (intersects.length > 0) {
+                const mesh = intersects[0].object;
+                if (hoveredMesh !== mesh) {
+                    if (hoveredMesh) {
+                        hoveredMesh.scale.set(1, 1, 1);
+                    }
+                    hoveredMesh = mesh;
+                    mesh.scale.set(1.2, 1.2, 1.2);
+                    tooltip.style.display = 'block';
+                    tooltip.innerHTML = `${mesh.userData.skill.name}: ${mesh.userData.skill.details}`;
+                    let tooltipX = event.clientX + 10;
+                    let tooltipY = event.clientY + 10;
+                    const tooltipWidth = tooltip.offsetWidth;
+                    const tooltipHeight = tooltip.offsetHeight;
+                    const windowWidth = window.innerWidth;
+                    const windowHeight = window.innerHeight;
+                    if (tooltipX + tooltipWidth > windowWidth) tooltipX = event.clientX - tooltipWidth - 10;
+                    if (tooltipY + tooltipHeight > windowHeight) tooltipY = event.clientY - tooltipHeight - 10;
+                    tooltip.style.left = `${tooltipX}px`;
+                    tooltip.style.top = `${tooltipY}px`;
+                }
+            } else {
+                if (hoveredMesh) {
+                    hoveredMesh.scale.set(1, 1, 1);
+                    hoveredMesh = null;
+                    tooltip.style.display = 'none';
+                }
+            }
+        }
+        function onTouchStart(event) {
+            event.preventDefault();
+            const touch = event.touches[0];
+            mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(textMeshes);
+            if (intersects.length > 0) {
+                const skill = intersects[0].object.userData.skill;
+                modalTitle.textContent = skill.name;
+                modalDetails.textContent = skill.details;
+                modalOverlay.style.display = 'flex';
+            }
+        }
+        modalClose.addEventListener('click', () => {
+            modalOverlay.style.display = 'none';
+        });
+        modalOverlay.addEventListener('click', (event) => {
+            if (event.target === modalOverlay) {
+                modalOverlay.style.display = 'none';
+            }
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && modalOverlay.style.display === 'flex') {
+                modalOverlay.style.display = 'none';
+            }
+        });
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('touchstart', onTouchStart, { passive: false });
+        window.addEventListener('click', onMouseMove);
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            textMeshes.forEach(mesh => {
+                mesh.lookAt(camera.position);
+            });
+            renderer.render(scene, camera);
+        }
+        animate();
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        window.addEventListener('resize', onWindowResize);
+    </script>
+</body>
+</html>

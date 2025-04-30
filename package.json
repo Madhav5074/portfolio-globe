@@ -1,0 +1,11 @@
+{
+    "name": "portfolio-globe",
+    "version": "1.0.0",
+    "description": "A 3D portfolio globe showcasing skills",
+    "main": "index.html",
+    "scripts": {
+      "start": "vercel dev"
+    },
+    "author": "",
+    "license": "ISC"
+  }

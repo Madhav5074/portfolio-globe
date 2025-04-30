@@ -1,0 +1,56 @@
+# System and OS files
+*.DAT
+*.LOG
+*.log
+*.blf
+*.regtrans-ms
+ntuser.*
+*.ini
+.anaconda/
+.conda/
+.condarc
+.continuum/
+.ssh/
+.vscode/
+.wdc/
+
+# Development environment
+*.ipynb
+*.ipynb_checkpoints/
+.ipython/
+.jupyter/
+.node_repl_history
+anaconda3/
+package-lock.json
+
+# Personal directories
+AppData/
+Contacts/
+Desktop/
+Downloads/
+Favorites/
+Links/
+Microsoft/
+Music/
+OneDrive/
+OneDrive - Vivekananda Institute of Professional Studies/
+Saved Games/
+Searches/
+Videos/
+3D Objects/
+
+# Project-specific
+practice.txt
+test.txt
+my_new_file_name.jpg
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+
+# Node.js
+node_modules/
+npm-debug.log
