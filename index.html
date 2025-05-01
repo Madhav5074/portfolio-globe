@@ -251,38 +251,6 @@
             <p id="modal-details"></p>
         </div>
     </div>
-    <script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script>
@@ -292,27 +260,42 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         document.body.appendChild(renderer.domElement);
+
         const isMobile = window.innerWidth < 600;
         const geometry = new THREE.IcosahedronGeometry(isMobile ? 4 : 4.5, 1);
-        const solidMaterial = new THREE.MeshStandardMaterial({ 
+
+        // Define materials for grey and purple spheres
+        const greyMaterial = new THREE.MeshStandardMaterial({ 
             color: 0xcccccc, 
             transparent: true, 
             opacity: 0.8, 
             roughness: 0.2, 
             metalness: 0.3 
         });
-        const sphere = new THREE.Mesh(geometry, solidMaterial);
+        const purpleMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x800080, 
+            transparent: true, 
+            opacity: 0.8, 
+            roughness: 1.0, 
+            metalness: 0.0 
+        });
+
+        const sphere = new THREE.Mesh(geometry, greyMaterial); // Start with grey sphere
         scene.add(sphere);
+
         const edgesGeometry = new THREE.EdgesGeometry(geometry);
         const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
         const edges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
         sphere.add(edges);
+
         const ambientLight = new THREE.AmbientLight(0x606060, 1.0);
         scene.add(ambientLight);
         const pointLight = new THREE.PointLight(0xffffff, 1.5, 100);
         pointLight.position.set(10, 10, 10);
         scene.add(pointLight);
+
         camera.position.z = isMobile ? 10 : 11;
+
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
@@ -330,8 +313,9 @@
                 if (modalOverlay.style.display !== 'flex') {
                     controls.autoRotate = true;
                 }
-            }, 5000); // 5 seconds pause
+            }, 5000);
         });
+
         const skills = [
             { name: "JavaScript", details: "Proficient in ES6+, used in web apps" },
             { name: "CSS", details: "Expert in animations and responsive design" },
@@ -354,9 +338,27 @@
             { name: "Webpack", details: "Module bundling and optimization" },
             { name: "Babel", details: "JavaScript transpilation" }
         ];
+
+        let sphereState = "grey"; // Track current sphere ("grey" or "purple")
         const textMeshes = [];
+        let fontLoaded = false;
+
         const loader = new THREE.FontLoader();
         loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
+            loader.font = font; // Store font for reuse
+            fontLoaded = true;
+            updateTextMeshes();
+        }, undefined, (error) => {
+            console.error('Font loading failed:', error);
+        });
+
+        function updateTextMeshes() {
+            if (!fontLoaded) return;
+
+            // Clear existing text meshes
+            textMeshes.forEach(mesh => sphere.remove(mesh));
+            textMeshes.length = 0;
+
             const positions = geometry.attributes.position.array;
             const vertexCount = positions.length / 3;
             const faceCount = vertexCount / 3;
@@ -365,6 +367,7 @@
             const interval = Math.floor(totalFaces / skillCount);
             const selectedFaceIndices = [];
             let currentIndex = 0;
+
             for (let i = 0; i < skillCount; i++) {
                 currentIndex += interval + Math.floor(Math.random() * 3 - 1);
                 if (currentIndex >= totalFaces) currentIndex = currentIndex % totalFaces;
@@ -373,6 +376,7 @@
                 }
                 selectedFaceIndices.push(currentIndex);
             }
+
             selectedFaceIndices.forEach((faceIndex, skillIndex) => {
                 const v1 = new THREE.Vector3(
                     positions[faceIndex * 9 + 0],
@@ -394,10 +398,11 @@
                     .add(v2)
                     .add(v3)
                     .divideScalar(3)
-                    .multiplyScalar(1.05);
+                    .multiplyScalar(sphereState === "grey" ? 1.05 : 1.1);
+
                 const textSize = window.innerWidth < 600 ? 0.25 : 0.35;
                 const textGeometry = new THREE.TextGeometry(skills[skillIndex].name, {
-                    font: font,
+                    font: loader.font,
                     size: textSize,
                     height: 0.01
                 });
@@ -409,21 +414,25 @@
                 textMesh.translateX(-textWidth / 2);
                 textMesh.lookAt(camera.position);
                 textMesh.userData = { skill: skills[skillIndex], faceIndex: skillIndex };
+                textMesh.renderOrder = 1;
                 sphere.add(textMesh);
                 textMeshes.push(textMesh);
             });
-        });
+        }
+
         const raycaster = new THREE.Raycaster();
         raycaster.params.Mesh.threshold = 0.1;
         const mouse = new THREE.Vector2();
         let hoveredMesh = null;
         let lastClickTime = 0;
         const clickDebounce = 300;
+
         const tooltip = document.getElementById('tooltip');
         const modalOverlay = document.getElementById('modal-overlay');
         const modalTitle = document.getElementById('modal-title');
         const modalDetails = document.getElementById('modal-details');
         const modalClose = document.getElementById('modal-close');
+
         function onMouseMove(event) {
             event.preventDefault();
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -459,6 +468,7 @@
                 }
             }
         }
+
         function onClick(event) {
             event.preventDefault();
             event.stopPropagation();
@@ -471,18 +481,29 @@
             const intersects = raycaster.intersectObjects(textMeshes);
             if (intersects.length > 0) {
                 const skill = intersects[0].object.userData.skill;
-                modalTitle.textContent = skill.name;
-                modalDetails.textContent = skill.details;
-                modalOverlay.style.display = 'flex';
-                controls.enabled = false; // Disable OrbitControls when modal is open
-                controls.autoRotate = false;
-                setTimeout(() => {
-                    if (modalOverlay.style.display !== 'flex') {
-                        controls.autoRotate = true;
-                    }
-                }, 5000); // 5 seconds pause
+                if (sphereState === "grey" && (skill.name === "HTML" || skill.name === "Python")) {
+                    sphereState = "purple";
+                    sphere.material = purpleMaterial;
+                    updateTextMeshes();
+                } else if (sphereState === "purple" && skill.name === "Three.js") {
+                    sphereState = "grey";
+                    sphere.material = greyMaterial;
+                    updateTextMeshes();
+                } else {
+                    modalTitle.textContent = skill.name;
+                    modalDetails.textContent = skill.details;
+                    modalOverlay.style.display = 'flex';
+                    controls.enabled = false;
+                    controls.autoRotate = false;
+                    setTimeout(() => {
+                        if (modalOverlay.style.display !== 'flex') {
+                            controls.autoRotate = true;
+                        }
+                    }, 5000);
+                }
             }
         }
+
         function onTouchStart(event) {
             event.preventDefault();
             const touch = event.touches[0];
@@ -492,60 +513,77 @@
             const intersects = raycaster.intersectObjects(textMeshes);
             if (intersects.length > 0) {
                 const skill = intersects[0].object.userData.skill;
-                modalTitle.textContent = skill.name;
-                modalDetails.textContent = skill.details;
-                modalOverlay.style.display = 'flex';
-                controls.enabled = false; // Disable OrbitControls when modal is open
-                controls.autoRotate = false;
-                setTimeout(() => {
-                    if (modalOverlay.style.display !== 'flex') {
-                        controls.autoRotate = true;
-                    }
-                }, 5000); // 5 seconds pause
+                if (sphereState === "grey" && (skill.name === "HTML" || skill.name === "Python")) {
+                    sphereState = "purple";
+                    sphere.material = purpleMaterial;
+                    updateTextMeshes();
+                } else if (sphereState === "purple" && skill.name === "Three.js") {
+                    sphereState = "grey";
+                    sphere.material = greyMaterial;
+                    updateTextMeshes();
+                } else {
+                    modalTitle.textContent = skill.name;
+                    modalDetails.textContent = skill.details;
+                    modalOverlay.style.display = 'flex';
+                    controls.enabled = false;
+                    controls.autoRotate = false;
+                    setTimeout(() => {
+                        if (modalOverlay.style.display !== 'flex') {
+                            controls.autoRotate = true;
+                        }
+                    }, 5000);
+                }
             }
         }
+
         function closeModal(event) {
             if (event) {
                 event.preventDefault();
                 event.stopPropagation();
             }
             modalOverlay.style.display = 'none';
-            controls.enabled = true; // Re-enable OrbitControls
+            controls.enabled = true;
             setTimeout(() => {
                 controls.autoRotate = true;
-            }, 5000); // 5 seconds pause after closing
-            // Fallback to ensure modal closes
+            }, 5000);
             setTimeout(() => {
                 if (modalOverlay.style.display !== 'none') {
                     modalOverlay.style.display = 'none';
                 }
             }, 500);
         }
+
         modalClose.addEventListener('click', (event) => {
             event.preventDefault();
             event.stopPropagation();
             closeModal(event);
         });
+
         modalClose.addEventListener('touchstart', (event) => {
             event.preventDefault();
             closeModal(event);
         }, { passive: false });
+
         modalOverlay.addEventListener('click', (event) => {
             if (event.target === modalOverlay) {
                 closeModal(event);
             }
         });
+
         document.getElementById('modal').addEventListener('click', (event) => {
-            event.stopPropagation(); // Prevent clicks inside modal from bubbling to overlay
+            event.stopPropagation();
         });
+
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' && modalOverlay.style.display === 'flex') {
                 closeModal(event);
             }
         });
+
         window.addEventListener('mousemove', onMouseMove, { passive: false });
         window.addEventListener('click', onClick);
         window.addEventListener('touchstart', onTouchStart, { passive: false });
+
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
@@ -554,14 +592,17 @@
             });
             renderer.render(scene, camera);
         }
+
         animate();
+
         function onWindowResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            updateTextMeshes(); // Update text positions on resize
         }
+
         window.addEventListener('resize', onWindowResize);
     </script>
-    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9385b8580fc0b037',t:'MTc0NjAwMjI3Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
