@@ -178,6 +178,38 @@
             transform: rotate(90deg) scale(1.1);
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
         }
+        #transition-notification {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 20px;
+            font-size: 24px;
+            font-weight: 700;
+            opacity: 0;
+            z-index: 25;
+            pointer-events: none;
+            text-align: center;
+        }
+        #particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 15;
+        }
+        .particle {
+            position: absolute;
+            background-color: #ffffff;
+            border-radius: 50%;
+            opacity: 0.8;
+            pointer-events: none;
+        }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
@@ -198,6 +230,12 @@
             0% { opacity: 0.7; }
             50% { opacity: 1; }
             100% { opacity: 0.7; }
+        }
+        @keyframes notificationFade {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.2); }
         }
         @media (max-width: 600px) {
             #info { 
@@ -235,6 +273,10 @@
                 height: 40px;
                 font-size: 24px;
             }
+            #transition-notification {
+                padding: 15px 30px;
+                font-size: 18px;
+            }
         }
     </style>
 </head>
@@ -251,8 +293,11 @@
             <p id="modal-details"></p>
         </div>
     </div>
+    <div id="transition-notification"></div>
+    <div id="particles"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
     <script>
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -264,7 +309,6 @@
         const isMobile = window.innerWidth < 600;
         const geometry = new THREE.IcosahedronGeometry(isMobile ? 4 : 4.5, 1);
 
-        // Define materials for grey and purple spheres
         const greyMaterial = new THREE.MeshStandardMaterial({ 
             color: 0xcccccc, 
             transparent: true, 
@@ -280,7 +324,7 @@
             metalness: 0.0 
         });
 
-        const sphere = new THREE.Mesh(geometry, greyMaterial); // Start with grey sphere
+        const sphere = new THREE.Mesh(geometry, greyMaterial);
         scene.add(sphere);
 
         const edgesGeometry = new THREE.EdgesGeometry(geometry);
@@ -288,11 +332,28 @@
         const edges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
         sphere.add(edges);
 
+        const transitionSphere = new THREE.Mesh(
+            new THREE.IcosahedronGeometry(isMobile ? 4 : 4.5, 1),
+            purpleMaterial.clone()
+        );
+        transitionSphere.visible = false;
+        transitionSphere.scale.set(0.5, 0.5, 0.5);
+        transitionSphere.position.set(0, 0, 0);
+        scene.add(transitionSphere);
+
+        const transitionEdgesGeometry = new THREE.EdgesGeometry(transitionSphere.geometry);
+        const transitionEdges = new THREE.LineSegments(transitionEdgesGeometry, edgesMaterial.clone());
+        transitionSphere.add(transitionEdges);
+
         const ambientLight = new THREE.AmbientLight(0x606060, 1.0);
         scene.add(ambientLight);
         const pointLight = new THREE.PointLight(0xffffff, 1.5, 100);
         pointLight.position.set(10, 10, 10);
         scene.add(pointLight);
+
+        const transitionLight = new THREE.PointLight(0xff00ff, 0, 50);
+        transitionLight.position.set(-5, 5, 5);
+        scene.add(transitionLight);
 
         camera.position.z = isMobile ? 10 : 11;
 
@@ -310,7 +371,7 @@
         });
         controls.addEventListener('end', () => {
             setTimeout(() => {
-                if (modalOverlay.style.display !== 'flex') {
+                if (modalOverlay.style.display !== 'flex' && !isTransitioning) {
                     controls.autoRotate = true;
                 }
             }, 5000);
@@ -339,23 +400,22 @@
             { name: "Babel", details: "JavaScript transpilation" }
         ];
 
-        let sphereState = "grey"; // Track current sphere ("grey" or "purple")
+        let sphereState = "grey";
+        let isTransitioning = false;
         const textMeshes = [];
-        let fontLoaded = false;
+        let font = null;
 
         const loader = new THREE.FontLoader();
-        loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
-            loader.font = font; // Store font for reuse
-            fontLoaded = true;
+        loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', (loadedFont) => {
+            font = loadedFont;
             updateTextMeshes();
         }, undefined, (error) => {
-            console.error('Font loading failed:', error);
+            console.warn('Font loading failed:', error, 'Text labels will not be displayed.');
         });
 
         function updateTextMeshes() {
-            if (!fontLoaded) return;
+            if (!font) return;
 
-            // Clear existing text meshes
             textMeshes.forEach(mesh => sphere.remove(mesh));
             textMeshes.length = 0;
 
@@ -398,21 +458,28 @@
                     .add(v2)
                     .add(v3)
                     .divideScalar(3)
-                    .multiplyScalar(sphereState === "grey" ? 1.05 : 1.1);
+                    .normalize()
+                    .multiplyScalar(sphereState === "grey" ? 4.8 : 5.0);
 
-                const textSize = window.innerWidth < 600 ? 0.25 : 0.35;
+                const textSize = isMobile ? 0.3 : 0.4;
                 const textGeometry = new THREE.TextGeometry(skills[skillIndex].name, {
-                    font: loader.font,
+                    font: font,
                     size: textSize,
-                    height: 0.01
+                    height: 0.05,
+                    curveSegments: 12
                 });
-                const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+                const textMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0xffffff, 
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.9
+                });
                 const textMesh = new THREE.Mesh(textGeometry, textMaterial);
                 textGeometry.computeBoundingBox();
                 const textWidth = textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
                 textMesh.position.copy(centroid);
                 textMesh.translateX(-textWidth / 2);
-                textMesh.lookAt(camera.position);
+                textMesh.lookAt(new THREE.Vector3(0, 0, 0));
                 textMesh.userData = { skill: skills[skillIndex], faceIndex: skillIndex };
                 textMesh.renderOrder = 1;
                 sphere.add(textMesh);
@@ -432,8 +499,12 @@
         const modalTitle = document.getElementById('modal-title');
         const modalDetails = document.getElementById('modal-details');
         const modalClose = document.getElementById('modal-close');
+        const transitionNotification = document.getElementById('transition-notification');
+        const particlesContainer = document.getElementById('particles');
 
         function onMouseMove(event) {
+            if (isTransitioning) return;
+            
             event.preventDefault();
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -469,7 +540,95 @@
             }
         }
 
+        function createParticles(color, count) {
+            particlesContainer.innerHTML = '';
+            
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                const size = Math.random() * 6 + 2;
+                const x = Math.random() * window.innerWidth;
+                const y = Math.random() * window.innerHeight;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${x}px`;
+                particle.style.top = `${y}px`;
+                particle.style.backgroundColor = color;
+                particlesContainer.appendChild(particle);
+                
+                const duration = Math.random() * 2000 + 1000;
+                const targetX = x + (Math.random() * 300 - 150);
+                const targetY = y + (Math.random() * 300 - 150);
+                
+                particle.animate([
+                    { opacity: 0.8, transform: `translate(0, 0)` },
+                    { opacity: 0, transform: `translate(${targetX - x}px, ${targetY - y}px)` }
+                ], {
+                    duration: duration,
+                    easing: 'cubic-bezier(0.1, 0.8, 0.2, 1)'
+                });
+                
+                setTimeout(() => {
+                    if (particle.parentNode === particlesContainer) {
+                        particlesContainer.removeChild(particle);
+                    }
+                }, duration);
+            }
+        }
+
+        function animateSphereTransition(fromState, toState) {
+            if (isTransitioning) return;
+            isTransitioning = true;
+            controls.autoRotate = false;
+            tooltip.style.display = 'none';
+            
+            transitionNotification.textContent = fromState === "grey" ? 
+                "Transforming to Advanced Skills!" : "Returning to Core Skills";
+            transitionNotification.style.animation = 'notificationFade 3s ease-in-out forwards';
+            
+            const targetMaterial = toState === "purple" ? purpleMaterial : greyMaterial;
+            
+            const shrinkTween = new TWEEN.Tween(sphere.scale)
+                .to({ x: 0.1, y: 0.1, z: 0.1 }, 1000)
+                .easing(TWEEN.Easing.Back.In)
+                .start();
+            
+            const particleColor = toState === "purple" ? "#cc55cc" : "#ffffff";
+            createParticles(particleColor, 200);
+            
+            const lightFlash = new TWEEN.Tween(transitionLight)
+                .to({ intensity: 4 }, 500)
+                .easing(TWEEN.Easing.Cubic.Out)
+                .onComplete(() => {
+                    new TWEEN.Tween(transitionLight)
+                        .to({ intensity: 0 }, 500)
+                        .easing(TWEEN.Easing.Cubic.In)
+                        .start();
+                })
+                .start();
+            
+            shrinkTween.onComplete(() => {
+                sphere.material = targetMaterial;
+                sphereState = toState;
+                
+                new TWEEN.Tween(sphere.scale)
+                    .to({ x: 1, y: 1, z: 1 }, 1200)
+                    .easing(TWEEN.Easing.Elastic.Out)
+                    .onComplete(() => {
+                        isTransitioning = false;
+                        updateTextMeshes();
+                        setTimeout(() => {
+                            controls.autoRotate = true;
+                        }, 1000);
+                    })
+                    .start();
+            });
+        }
+
         function onClick(event) {
+            if (isTransitioning) return;
+            
             event.preventDefault();
             event.stopPropagation();
             const currentTime = Date.now();
@@ -481,30 +640,27 @@
             const intersects = raycaster.intersectObjects(textMeshes);
             if (intersects.length > 0) {
                 const skill = intersects[0].object.userData.skill;
+                const clickPosition = intersects[0].object.position.clone();
+                
+                createSkillClickEffect(clickPosition);
+                
                 if (sphereState === "grey" && (skill.name === "HTML" || skill.name === "Python")) {
-                    sphereState = "purple";
-                    sphere.material = purpleMaterial;
-                    updateTextMeshes();
+                    animateSphereTransition("grey", "purple");
                 } else if (sphereState === "purple" && skill.name === "Three.js") {
-                    sphereState = "grey";
-                    sphere.material = greyMaterial;
-                    updateTextMeshes();
+                    animateSphereTransition("purple", "grey");
                 } else {
                     modalTitle.textContent = skill.name;
                     modalDetails.textContent = skill.details;
                     modalOverlay.style.display = 'flex';
                     controls.enabled = false;
                     controls.autoRotate = false;
-                    setTimeout(() => {
-                        if (modalOverlay.style.display !== 'flex') {
-                            controls.autoRotate = true;
-                        }
-                    }, 5000);
                 }
             }
         }
 
         function onTouchStart(event) {
+            if (isTransitioning) return;
+            
             event.preventDefault();
             const touch = event.touches[0];
             mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
@@ -514,24 +670,15 @@
             if (intersects.length > 0) {
                 const skill = intersects[0].object.userData.skill;
                 if (sphereState === "grey" && (skill.name === "HTML" || skill.name === "Python")) {
-                    sphereState = "purple";
-                    sphere.material = purpleMaterial;
-                    updateTextMeshes();
+                    animateSphereTransition("grey", "purple");
                 } else if (sphereState === "purple" && skill.name === "Three.js") {
-                    sphereState = "grey";
-                    sphere.material = greyMaterial;
-                    updateTextMeshes();
+                    animateSphereTransition("purple", "grey");
                 } else {
                     modalTitle.textContent = skill.name;
                     modalDetails.textContent = skill.details;
                     modalOverlay.style.display = 'flex';
                     controls.enabled = false;
                     controls.autoRotate = false;
-                    setTimeout(() => {
-                        if (modalOverlay.style.display !== 'flex') {
-                            controls.autoRotate = true;
-                        }
-                    }, 5000);
                 }
             }
         }
@@ -544,13 +691,10 @@
             modalOverlay.style.display = 'none';
             controls.enabled = true;
             setTimeout(() => {
-                controls.autoRotate = true;
-            }, 5000);
-            setTimeout(() => {
-                if (modalOverlay.style.display !== 'none') {
-                    modalOverlay.style.display = 'none';
+                if (!isTransitioning) {
+                    controls.autoRotate = true;
                 }
-            }, 500);
+            }, 2000);
         }
 
         modalClose.addEventListener('click', (event) => {
@@ -584,12 +728,19 @@
         window.addEventListener('click', onClick);
         window.addEventListener('touchstart', onTouchStart, { passive: false });
 
-        function animate() {
+        function animate(time) {
             requestAnimationFrame(animate);
+            TWEEN.update(time);
             controls.update();
             textMeshes.forEach(mesh => {
                 mesh.lookAt(camera.position);
             });
+            
+            if (!isTransitioning) {
+                sphere.scale.x = sphere.scale.y = sphere.scale.z = 
+                    1 + Math.sin(time * 0.001) * 0.02;
+            }
+            
             renderer.render(scene, camera);
         }
 
@@ -599,10 +750,70 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            updateTextMeshes(); // Update text positions on resize
+            updateTextMeshes();
         }
 
         window.addEventListener('resize', onWindowResize);
+
+        function addStars() {
+            const starGeometry = new THREE.BufferGeometry();
+            const starMaterial = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 0.1,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            const starVertices = [];
+            for (let i = 0; i < 1000; i++) {
+                const x = (Math.random() - 0.5) * 2000;
+                const y = (Math.random() - 0.5) * 2000;
+                const z = (Math.random() - 0.5) * 2000;
+                starVertices.push(x, y, z);
+            }
+            
+            starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+            const stars = new THREE.Points(starGeometry, starMaterial);
+            scene.add(stars);
+            
+            function animateStars() {
+                stars.rotation.y += 0.0001;
+                stars.rotation.x += 0.00005;
+                requestAnimationFrame(animateStars);
+            }
+            animateStars();
+        }
+        addStars();
+
+        function createSkillClickEffect(position) {
+            const clickEffectGeometry = new THREE.RingGeometry(0.1, 0.2, 16);
+            const clickEffectMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xffffff, 
+                transparent: true, 
+                opacity: 0.8,
+                side: THREE.DoubleSide
+            });
+            
+            const clickEffect = new THREE.Mesh(clickEffectGeometry, clickEffectMaterial);
+            clickEffect.position.copy(position);
+            clickEffect.lookAt(camera.position);
+            scene.add(clickEffect);
+            
+            new TWEEN.Tween(clickEffect.scale)
+                .to({ x: 3, y: 3, z: 3 }, 800)
+                .easing(TWEEN.Easing.Quadratic.Out)
+                .start();
+                
+            new TWEEN.Tween(clickEffectMaterial)
+                .to({ opacity: 0 }, 800)
+                .easing(TWEEN.Easing.Quadratic.Out)
+                .onComplete(() => {
+                    scene.remove(clickEffect);
+                    clickEffect.geometry.dispose();
+                    clickEffectMaterial.dispose();
+                })
+                .start();
+        }
     </script>
 </body>
 </html>
