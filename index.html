@@ -307,7 +307,7 @@
         document.body.appendChild(renderer.domElement);
 
         const isMobile = window.innerWidth < 600;
-        const geometry = new THREE.IcosahedronGeometry(isMobile ? 3.5 : 4.5, 1);
+        const geometry = new THREE.IcosahedronGeometry(isMobile ? 4 : 4.5, 1);
 
         const greyMaterial = new THREE.MeshStandardMaterial({ 
             color: 0xcccccc, 
@@ -333,7 +333,7 @@
         sphere.add(edges);
 
         const transitionSphere = new THREE.Mesh(
-            new THREE.IcosahedronGeometry(isMobile ? 3.5 : 4.5, 1),
+            new THREE.IcosahedronGeometry(isMobile ? 4 : 4.5, 1),
             purpleMaterial.clone()
         );
         transitionSphere.visible = false;
@@ -355,7 +355,7 @@
         transitionLight.position.set(-5, 5, 5);
         scene.add(transitionLight);
 
-        camera.position.z = isMobile ? 12 : 11;
+        camera.position.z = isMobile ? 10 : 11;
 
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
@@ -364,8 +364,8 @@
         controls.enablePan = false;
         controls.autoRotate = true;
         controls.autoRotateSpeed = 0.5;
-        controls.minDistance = isMobile ? 4 : 5;
-        controls.maxDistance = isMobile ? 13 : 14;
+        controls.minDistance = 5;
+        controls.maxDistance = isMobile ? 15 : 14;
         controls.addEventListener('start', () => {
             controls.autoRotate = false;
         });
@@ -461,7 +461,7 @@
                     .normalize()
                     .multiplyScalar(sphereState === "grey" ? 4.8 : 5.0);
 
-                const textSize = isMobile ? 0.25 : 0.4;
+                const textSize = isMobile ? 0.3 : 0.4;
                 const textGeometry = new THREE.TextGeometry(skills[skillIndex].name, {
                     font: font,
                     size: textSize,
