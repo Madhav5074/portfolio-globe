@@ -1,4 +1,43 @@
-<!DOCTYPE html>
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -50,7 +89,7 @@
             color: #e0e0ff;
             margin-top: 8px;
             display: block;
-            animation: pulse 2s infinite ease-in-out;
+            animation: pulse 2s infinite easement-in-out;
             transition: opacity 0.5s ease;
         }
         #bottom-note {
@@ -430,15 +469,18 @@
             }, 5000);
         });
 
-        const skills = [
-            { name: "JavaScript", details: "Proficient in ES6+, used in web apps" },
-            { name: "CSS", details: "Expert in animations and responsive design" },
-            { name: "skills", details: "Semantic markup and accessibility" },
-            { name: "Python", details: "Used for scripting and data analysis" },
-            { name: "React", details: "Built dynamic SPAs with React" },
-            { name: "Node.js", details: "Backend development with Express" },
-            { name: "SQL", details: "Database design and optimization" },
-            { name: "Git", details: "Version control and collaboration" },
+        const greySkills = [
+            { name: "Education", details: "Academic background and qualifications" },
+            { name: "Internships", details: "Professional experience through internships" },
+            { name: "Achievements", details: "Notable accomplishments and awards" },
+            { name: "Projects", details: "Key projects showcasing skills" },
+            { name: "Responsibilities", details: "Roles and duties in professional settings" },
+            { name: "About", details: "Personal background and overview" },
+            { name: "Interests", details: "Hobbies and areas of passion" },
+            { name: "skills", details: "Click to explore technical skills" }
+        ];
+
+        const purpleSkills = [
             { name: "Three.js", details: "3D visualizations and animations" },
             { name: "TypeScript", details: "Type-safe JavaScript development" },
             { name: "AWS", details: "Cloud deployment and management" },
@@ -457,6 +499,8 @@
         let isTransitioning = false;
         const textMeshes = [];
         let font = null;
+
+        const FIXED_GREY_FACE_INDICES = [0, 15, 25, 35, 45, 55, 65, 75];
 
         const loader = new THREE.FontLoader();
         loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', (loadedFont) => {
@@ -539,10 +583,13 @@
             const vertexCount = positions.length / 3;
             const faceCount = vertexCount / 3;
             const totalFaces = faceCount;
-            const skillCount = sphereState === "grey" ? 8 : 12;
-            const selectedFaceIndices = selectSeparatedFaceIndices(positions, totalFaces, skillCount);
+            const currentSkills = sphereState === "grey" ? greySkills : purpleSkills;
+            const skillCount = currentSkills.length;
+            const selectedFaceIndices = sphereState === "grey" 
+                ? FIXED_GREY_FACE_INDICES 
+                : selectSeparatedFaceIndices(positions, totalFaces, skillCount);
             selectedFaceIndices.forEach((faceIndex, skillIndex) => {
-                if (skillIndex >= skills.length || skillIndex >= skillCount) return;
+                if (skillIndex >= currentSkills.length || skillIndex >= skillCount) return;
                 const v1 = new THREE.Vector3(
                     positions[faceIndex * 9 + 0],
                     positions[faceIndex * 9 + 1],
@@ -564,9 +611,9 @@
                     .add(v3)
                     .divideScalar(3)
                     .normalize()
-                    .multiplyScalar(sphereState === "grey" ? 4.8 : 5.0);
+                    .multiplyScalar(sphereState === "grey" ? 5.2 : 5.0);
                 const textSize = isMobile ? 0.25 : 0.4;
-                const textGeometry = new THREE.TextGeometry(skills[skillIndex].name, {
+                const textGeometry = new THREE.TextGeometry(currentSkills[skillIndex].name, {
                     font: font,
                     size: textSize,
                     height: 0.05,
@@ -584,7 +631,7 @@
                 textMesh.position.copy(centroid);
                 textMesh.translateX(-textWidth / 2);
                 textMesh.lookAt(new THREE.Vector3(0, 0, 0));
-                textMesh.userData = { skill: skills[skillIndex], faceIndex: skillIndex };
+                textMesh.userData = { skill: currentSkills[skillIndex], faceIndex: skillIndex };
                 textMesh.renderOrder = 1;
                 sphere.add(textMesh);
                 textMeshes.push(textMesh);
@@ -596,7 +643,7 @@
         }
 
         const raycaster = new THREE.Raycaster();
-        raycaster.params.Mesh.threshold = 0.1;
+        raycaster.params.Mesh.threshold = 0.2;
         const mouse = new THREE.Vector2();
         let hoveredMesh = null;
         let lastClickTime = 0;
@@ -773,7 +820,7 @@
                 const skill = intersects[0].object.userData.skill;
                 const clickPosition = intersects[0].object.position.clone();
                 createSkillClickEffect(clickPosition);
-                if (sphereState === "grey" && (skill.name === "skills" || skill.name === "Python")) {
+                if (sphereState === "grey" && skill.name === "skills") {
                     animateSphereTransition("grey", "purple");
                 } else {
                     modalTitle.textContent = skill.name;
@@ -795,7 +842,7 @@
             const intersects = raycaster.intersectObjects(textMeshes);
             if (intersects.length > 0) {
                 const skill = intersects[0].object.userData.skill;
-                if (sphereState === "grey" && (skill.name === "skills" || skill.name === "Python")) {
+                if (sphereState === "grey" && skill.name === "skills") {
                     animateSphereTransition("grey", "purple");
                 } else {
                     modalTitle.textContent = skill.name;
@@ -946,5 +993,6 @@
                 .start();
         }
     </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93b234837facadad',t:'MTc0NjQ2ODczNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
