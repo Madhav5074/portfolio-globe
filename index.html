@@ -1,43 +1,4 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -74,7 +35,7 @@
             border-radius: 12px; 
             text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.9); 
             z-index: 10; 
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease; 
             animation: fadeIn 1s ease-in-out;
             backdrop-filter: blur(8px);
         }
@@ -90,6 +51,25 @@
             margin-top: 8px;
             display: block;
             animation: pulse 2s infinite ease-in-out;
+            transition: opacity 0.5s ease;
+        }
+        #bottom-note {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            font-weight: 400;
+            color: #e0e0ff;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 12px;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.9);
+            z-index: 10;
+            animation: pulse 2s infinite ease-in-out;
+            backdrop-filter: blur(8px);
+            transition: opacity 0.5s ease;
         }
         #tooltip { 
             position: absolute; 
@@ -276,6 +256,11 @@
                 font-size: 12px;
                 margin-top: 6px;
             }
+            #bottom-note {
+                font-size: 12px;
+                padding: 8px 16px;
+                bottom: 12px;
+            }
             #tooltip { 
                 font-size: 14px; 
                 padding: 10px 14px; 
@@ -316,9 +301,10 @@
 </head>
 <body>
     <div id="info">
-        My Skills Portfolio
-        <span id="info-note">Click a skill to learn more!</span>
+        Madhav Kalra
+        <span id="info-note">Marketing Mind Meets Code Craft</span>
     </div>
+    <div id="bottom-note">Click a skill to learn more!</div>
     <div id="tooltip"></div>
     <div id="modal-overlay">
         <div id="modal">
@@ -346,23 +332,15 @@
                 var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
                 var firstSheetName = workbook.SheetNames[0];
                 var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
                 var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
                 var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
                 var headerRowIndex = filteredData.findIndex((row, index) =>
                   row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
                 );
-                // Fallback
                 if (headerRowIndex === -1 || headerRowIndex > 25) {
                   headerRowIndex = 0;
                 }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
                 csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
                 return csv;
             } catch (e) {
@@ -514,68 +492,57 @@
 
         function getAngularDistance(vec1, vec2) {
             const dot = vec1.dot(vec2);
-            return Math.acos(Math.min(Math.max(dot, -1), 1)) * (180 / Math.PI); // Convert to degrees
+            return Math.acos(Math.min(Math.max(dot, -1), 1)) * (180 / Math.PI);
         }
 
         function selectSeparatedFaceIndices(positions, totalFaces, count) {
             const allIndices = Array.from({ length: totalFaces }, (_, i) => i);
             const selectedIndices = [];
             const centroids = allIndices.map(i => getFaceCentroid(positions, i));
-
-            // Randomly select the first index
             const firstIndex = allIndices.splice(Math.floor(Math.random() * allIndices.length), 1)[0];
             selectedIndices.push(firstIndex);
-
-            // Select remaining indices, prioritizing maximum separation
             while (selectedIndices.length < count && allIndices.length > 0) {
                 let maxMinDistance = -Infinity;
                 let bestIndex = null;
                 let bestIndexInAll = null;
-
-                // For each remaining face, compute minimum distance to already selected centroids
                 allIndices.forEach((index, i) => {
                     const centroid = centroids[index];
                     const minDistance = selectedIndices.reduce((min, selected) => {
                         const distance = getAngularDistance(centroid, centroids[selected]);
                         return Math.min(min, distance);
                     }, Infinity);
-
                     if (minDistance > maxMinDistance) {
                         maxMinDistance = minDistance;
                         bestIndex = index;
                         bestIndexInAll = i;
                     }
                 });
-
                 if (bestIndex !== null) {
                     selectedIndices.push(bestIndex);
                     allIndices.splice(bestIndexInAll, 1);
                 } else {
-                    break; // Safety check
+                    break;
                 }
             }
-
             return selectedIndices;
         }
 
         function updateTextMeshes() {
             if (!font) return;
-
-            textMeshes.forEach(mesh => sphere.remove(mesh));
+            textMeshes.forEach(mesh => {
+                sphere.remove(mesh);
+                mesh.geometry.dispose();
+                mesh.material.dispose();
+            });
             textMeshes.length = 0;
-
             const positions = geometry.attributes.position.array;
             const vertexCount = positions.length / 3;
             const faceCount = vertexCount / 3;
             const totalFaces = faceCount;
-            const skillCount = sphereState === "grey" ? 8 : 12; // 8 for grey, 12 for purple
-            let selectedFaceIndices;
-
-            // Use maximum separation for both grey and purple globes
-            selectedFaceIndices = selectSeparatedFaceIndices(positions, totalFaces, skillCount);
-
+            const skillCount = sphereState === "grey" ? 8 : 12;
+            const selectedFaceIndices = selectSeparatedFaceIndices(positions, totalFaces, skillCount);
             selectedFaceIndices.forEach((faceIndex, skillIndex) => {
-                if (skillIndex >= skills.length || skillIndex >= skillCount) return; // Prevent out-of-bounds access
+                if (skillIndex >= skills.length || skillIndex >= skillCount) return;
                 const v1 = new THREE.Vector3(
                     positions[faceIndex * 9 + 0],
                     positions[faceIndex * 9 + 1],
@@ -598,7 +565,6 @@
                     .divideScalar(3)
                     .normalize()
                     .multiplyScalar(sphereState === "grey" ? 4.8 : 5.0);
-
                 const textSize = isMobile ? 0.25 : 0.4;
                 const textGeometry = new THREE.TextGeometry(skills[skillIndex].name, {
                     font: font,
@@ -610,7 +576,7 @@
                     color: 0xffffff, 
                     side: THREE.DoubleSide,
                     transparent: true,
-                    opacity: 0.9
+                    opacity: 0
                 });
                 const textMesh = new THREE.Mesh(textGeometry, textMaterial);
                 textGeometry.computeBoundingBox();
@@ -622,6 +588,10 @@
                 textMesh.renderOrder = 1;
                 sphere.add(textMesh);
                 textMeshes.push(textMesh);
+                new TWEEN.Tween(textMaterial)
+                    .to({ opacity: 0.9 }, 1200)
+                    .easing(TWEEN.Easing.Quadratic.In)
+                    .start();
             });
         }
 
@@ -640,10 +610,12 @@
         const transitionNotification = document.getElementById('transition-notification');
         const particlesContainer = document.getElementById('particles');
         const backButton = document.getElementById('back-button');
+        const infoDiv = document.getElementById('info');
+        const infoNote = document.getElementById('info-note');
+        const bottomNote = document.getElementById('bottom-note');
 
         function onMouseMove(event) {
             if (isTransitioning) return;
-            
             event.preventDefault();
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -681,11 +653,9 @@
 
         function createParticles(color, count) {
             particlesContainer.innerHTML = '';
-            
             for (let i = 0; i < count; i++) {
                 const particle = document.createElement('div');
                 particle.className = 'particle';
-                
                 const size = Math.random() * 6 + 2;
                 const x = Math.random() * window.innerWidth;
                 const y = Math.random() * window.innerHeight;
@@ -695,11 +665,9 @@
                 particle.style.top = `${y}px`;
                 particle.style.backgroundColor = color;
                 particlesContainer.appendChild(particle);
-                
                 const duration = Math.random() * 2000 + 1000;
                 const targetX = x + (Math.random() * 300 - 150);
                 const targetY = y + (Math.random() * 300 - 150);
-                
                 particle.animate([
                     { opacity: 0.8, transform: `translate(0, 0)` },
                     { opacity: 0, transform: `translate(${targetX - x}px, ${targetY - y}px)` }
@@ -707,7 +675,6 @@
                     duration: duration,
                     easing: 'cubic-bezier(0.1, 0.8, 0.2, 1)'
                 });
-                
                 setTimeout(() => {
                     if (particle.parentNode === particlesContainer) {
                         particlesContainer.removeChild(particle);
@@ -721,7 +688,18 @@
             isTransitioning = true;
             controls.autoRotate = false;
             tooltip.style.display = 'none';
-            
+
+            // Fade out existing text meshes and UI text
+            textMeshes.forEach(mesh => {
+                new TWEEN.Tween(mesh.material)
+                    .to({ opacity: 0 }, 1000)
+                    .easing(TWEEN.Easing.Quadratic.Out)
+                    .start();
+            });
+            infoDiv.style.opacity = '0';
+            infoNote.style.opacity = '0';
+            bottomNote.style.opacity = '0';
+
             transitionNotification.textContent = fromState === "grey" ? 
                 "Transforming to Advanced Skills!" : "Returning to Core Skills";
             transitionNotification.style.animation = 'notificationFade 3s ease-in-out forwards';
@@ -752,6 +730,20 @@
                 sphereState = toState;
                 backButton.style.display = toState === "purple" ? 'block' : 'none';
                 
+                // Update text content after fade-out
+                infoDiv.childNodes[0].textContent = toState === "grey" ? "Madhav Kalra" : "My Skills Portfolio";
+                infoNote.textContent = toState === "grey" ? "Marketing Mind Meets Code Craft" : "Click a skill to learn more!";
+                bottomNote.style.display = toState === "grey" ? 'block' : 'none';
+                
+                // Fade in new text
+                setTimeout(() => {
+                    infoDiv.style.opacity = '1';
+                    infoNote.style.opacity = '1';
+                    if (toState === "grey") {
+                        bottomNote.style.opacity = '1';
+                    }
+                }, 50); // Small delay to ensure CSS transition applies
+                
                 new TWEEN.Tween(sphere.scale)
                     .to({ x: 1, y: 1, z: 1 }, 1200)
                     .easing(TWEEN.Easing.Elastic.Out)
@@ -762,13 +754,12 @@
                             controls.autoRotate = true;
                         }, 1000);
                     })
-                .start();
+                    .start();
             });
         }
 
         function onClick(event) {
             if (isTransitioning) return;
-            
             event.preventDefault();
             event.stopPropagation();
             const currentTime = Date.now();
@@ -781,9 +772,7 @@
             if (intersects.length > 0) {
                 const skill = intersects[0].object.userData.skill;
                 const clickPosition = intersects[0].object.position.clone();
-                
                 createSkillClickEffect(clickPosition);
-                
                 if (sphereState === "grey" && (skill.name === "skills" || skill.name === "Python")) {
                     animateSphereTransition("grey", "purple");
                 } else {
@@ -798,7 +787,6 @@
 
         function onTouchStart(event) {
             if (isTransitioning) return;
-            
             event.preventDefault();
             const touch = event.touches[0];
             mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
@@ -886,12 +874,10 @@
             textMeshes.forEach(mesh => {
                 mesh.lookAt(camera.position);
             });
-            
             if (!isTransitioning) {
                 sphere.scale.x = sphere.scale.y = sphere.scale.z = 
                     1 + Math.sin(time * 0.001) * 0.02;
             }
-            
             renderer.render(scene, camera);
         }
 
@@ -914,7 +900,6 @@
                 transparent: true,
                 opacity: 0.8
             });
-            
             const starVertices = [];
             for (let i = 0; i < 1000; i++) {
                 const x = (Math.random() - 0.5) * 2000;
@@ -922,11 +907,9 @@
                 const z = (Math.random() - 0.5) * 2000;
                 starVertices.push(x, y, z);
             }
-            
             starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
             const stars = new THREE.Points(starGeometry, starMaterial);
             scene.add(stars);
-            
             function animateStars() {
                 stars.rotation.y += 0.0001;
                 stars.rotation.x += 0.00005;
@@ -944,17 +927,14 @@
                 opacity: 0.8,
                 side: THREE.DoubleSide
             });
-            
             const clickEffect = new THREE.Mesh(clickEffectGeometry, clickEffectMaterial);
             clickEffect.position.copy(position);
             clickEffect.lookAt(camera.position);
             scene.add(clickEffect);
-            
             new TWEEN.Tween(clickEffect.scale)
                 .to({ x: 3, y: 3, z: 3 }, 800)
                 .easing(TWEEN.Easing.Quadratic.Out)
                 .start();
-                
             new TWEEN.Tween(clickEffectMaterial)
                 .to({ opacity: 0 }, 800)
                 .easing(TWEEN.Easing.Quadratic.Out)
@@ -966,6 +946,5 @@
                 .start();
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93aa2b7f2c884514',t:'MTc0NjM4NDQ4MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
