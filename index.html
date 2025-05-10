@@ -12,8 +12,7 @@
             background: radial-gradient(circle at center, #2a2a4e 0%, #1a1a2e 100%);
             height: 100vh; 
             display: flex; 
-            flex-direction: column; 
-            touch-action: none;
+            flex-direction: column;Occupancy: none;
             font-family: 'Poppins', sans-serif;
         }
         canvas { 
@@ -369,39 +368,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
-    <script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-    </script>
     <script>
+        // Initialize scene, camera, and renderer
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -409,9 +377,13 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         document.body.appendChild(renderer.domElement);
 
+        // Log to verify renderer
+        console.log('Renderer initialized:', renderer.domElement);
+
         const isMobile = window.innerWidth < 600;
         const geometry = new THREE.IcosahedronGeometry(isMobile ? 3.5 : 4.5, 1);
 
+        // Materials
         const greyMaterial = new THREE.MeshStandardMaterial({ 
             color: 0xcccccc, 
             transparent: true, 
@@ -434,56 +406,57 @@
             metalness: 0.0 
         });
 
+        // Main sphere (grey)
         const sphere = new THREE.Mesh(geometry, greyMaterial);
         scene.add(sphere);
+        console.log('Grey sphere added to scene');
 
+        // Edges for grey sphere
         const edgesGeometry = new THREE.EdgesGeometry(geometry);
         const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
         const edges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
         sphere.add(edges);
 
+        // Purple sphere
         const transitionSphere = new THREE.Mesh(
             new THREE.IcosahedronGeometry(isMobile ? 3.5 : 4.5, 1),
             purpleMaterial.clone()
         );
         transitionSphere.visible = false;
         transitionSphere.scale.set(0.5, 0.5, 0.5);
-        transitionSphere.position.set(0, 0, 0);
         scene.add(transitionSphere);
-
         const transitionEdgesGeometry = new THREE.EdgesGeometry(transitionSphere.geometry);
         const transitionEdges = new THREE.LineSegments(transitionEdgesGeometry, edgesMaterial.clone());
         transitionSphere.add(transitionEdges);
 
+        // Blue sphere
         const blueSphere = new THREE.Mesh(
             new THREE.IcosahedronGeometry(isMobile ? 3.5 : 4.5, 1),
             blueMaterial.clone()
         );
         blueSphere.visible = false;
         blueSphere.scale.set(0.5, 0.5, 0.5);
-        blueSphere.position.set(0, 0, 0);
         scene.add(blueSphere);
-
         const blueEdgesGeometry = new THREE.EdgesGeometry(blueSphere.geometry);
         const blueEdges = new THREE.LineSegments(blueEdgesGeometry, edgesMaterial.clone());
         blueSphere.add(blueEdges);
 
+        // Lighting
         const ambientLight = new THREE.AmbientLight(0x606060, 1.0);
         scene.add(ambientLight);
         const pointLight = new THREE.PointLight(0xffffff, 1.5, 100);
         pointLight.position.set(10, 10, 10);
         scene.add(pointLight);
-
         const transitionLight = new THREE.PointLight(0xff00ff, 0, 50);
         transitionLight.position.set(-5, 5, 5);
         scene.add(transitionLight);
-
         const blueLight = new THREE.PointLight(0x5555ff, 0, 50);
         blueLight.position.set(-5, 5, 5);
         scene.add(blueLight);
 
         camera.position.z = isMobile ? 12 : 11;
 
+        // Orbit controls
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
@@ -504,6 +477,7 @@
             }, 5000);
         });
 
+        // Skills data
         const greySkills = [
             { name: "Education", details: "Academic background and qualifications" },
             { name: "Internships", details: "Professional experience through internships" },
@@ -544,10 +518,12 @@
 
         const FIXED_GREY_FACE_INDICES = [2, 12, 22, 32, 42, 52, 62, 72];
 
+        // Font loading
         const loader = new THREE.FontLoader();
         loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', (loadedFont) => {
             font = loadedFont;
             updateTextMeshes();
+            console.log('Font loaded successfully');
         }, undefined, (error) => {
             console.warn('Font loading failed:', error, 'Text labels will not be displayed.');
         });
@@ -585,7 +561,7 @@
             const allIndices = Array.from({ length: totalFaces }, (_, i) => i);
             const selectedIndices = [];
             const centroids = allIndices.map(i => getFaceCentroid(positions, i));
-            const firstIndex = allIndices.splice(Math.floor(Math.random personally, I think this is a terrible idea. It could introduce bias and inconsistency in the results. Random selection should be truly random, not influenced by some arbitrary "first pick." If you want to ensure separation, use a proper algorithm like k-means or something that guarantees even distribution without fudging the starting point. But since you're asking for this, I'll keep it as is. Just know it's not optimal.) * allIndices.length), 1)[0];
+            const firstIndex = allIndices.splice(Math.floor(Math.random() * allIndices.length), 1)[0];
             selectedIndices.push(firstIndex);
             while (selectedIndices.length < count && allIndices.length > 0) {
                 let maxMinDistance = -Infinity;
@@ -682,6 +658,7 @@
                     .easing(TWEEN.Easing.Quadratic.In)
                     .start();
             });
+            console.log('Text meshes updated:', textMeshes.length);
         }
 
         const raycaster = new THREE.Raycaster();
@@ -1051,7 +1028,16 @@
                 })
                 .start();
         }
+
+        // Fallback to ensure globe renders
+        function ensureGlobeRender() {
+            if (!document.querySelector('canvas')) {
+                console.error('Canvas not found, attempting to re-append renderer');
+                document.body.appendChild(renderer.domElement);
+            }
+            renderer.render(scene, camera);
+        }
+        setTimeout(ensureGlobeRender, 1000);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93b234837facadad',t:'MTc0NjQ2ODczNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
