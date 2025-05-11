@@ -109,9 +109,9 @@
         #modal {
             background: rgba(0, 0, 0, 0.7); /* Same as #info background */
             backdrop-filter: blur(8px);
-            width: 700px; /* Fixed width */
-            height: 400px; /* Fixed height */
-            padding: 40px;
+            width: 400px; /* Smaller width to match "Email" popup */
+            height: 200px; /* Smaller height to match "Email" popup */
+            padding: 20px; /* Reduced padding for smaller size */
             border-radius: 20px;
             border: 2px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
@@ -124,11 +124,12 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
+            backface-visibility: hidden; /* Prevent rendering artifacts */
         }
         #modal h1 {
             color: #ffffff;
-            margin-bottom: 20px;
-            font-size: 2.8em; /* Adjusted to fit fixed modal size */
+            margin-bottom: 10px; /* Reduced margin for smaller modal */
+            font-size: 1.8em; /* Smaller font size to fit */
             font-weight: 800;
             letter-spacing: -1px;
             text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.4);
@@ -136,37 +137,38 @@
         }
         #modal p {
             color: #f5f5f5;
-            line-height: 1.8;
-            font-size: 1.3em; /* Adjusted to fit fixed modal size */
+            line-height: 1.6; /* Adjusted for readability */
+            font-size: 1em; /* Smaller font size to fit */
             font-weight: 400;
             text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
             animation: fadeInContent 0.8s ease-in-out;
         }
         #modal-close {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 10px; /* Adjusted for smaller modal */
+            right: 10px;
             background: #ffffff;
             color: #6b48ff;
             border: none;
             border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            font-size: 32px;
+            width: 40px; /* Smaller close button */
+            height: 40px;
+            font-size: 24px; /* Adjusted font size */
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.4s ease;
+            transition: all 0.3s ease; /* Shortened transition duration */
             z-index: 35;
             touch-action: manipulation;
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
             transform: scale(1);
+            will-change: transform; /* Optimize rendering */
         }
         #modal-close:hover {
             background: #6b48ff;
             color: #ffffff;
-            transform: scale(1.15) rotate(180deg);
+            transform: scale(1.15); /* Removed rotate for simplicity */
             box-shadow: 0 8px 20px rgba(107, 72, 255, 0.7);
         }
         #back-button {
@@ -266,7 +268,7 @@
         }
         @keyframes modalPop {
             from { opacity: 0; transform: scale(0.7) rotate(-5deg); }
-            to { opacity: 1; transform: scale(1) rotate(0deg); }
+            to { opacity: 1; transform: scale(1) rotate(-5deg); } /* Keep the -5deg tilt */
         }
         @keyframes fadeInOverlay {
             from { opacity: 0; }
@@ -313,25 +315,25 @@
                 max-width: 180px; 
             }
             #modal {
-                width: 90%;
-                height: 350px;
-                padding: 30px;
+                width: 80%; /* Adjusted for mobile */
+                height: 180px; /* Smaller height for mobile */
+                padding: 15px; /* Reduced padding for mobile */
                 border-radius: 15px;
             }
             #modal h1 {
-                font-size: 2.2em;
-                margin-bottom: 20px;
+                font-size: 1.4em; /* Adjusted for mobile */
+                margin-bottom: 8px;
             }
             #modal p {
-                font-size: 1.2em;
-                line-height: 1.7;
+                font-size: 0.9em; /* Adjusted for mobile */
+                line-height: 1.5;
             }
             #modal-close {
-                width: 45px;
-                height: 45px;
-                font-size: 24px;
-                top: 15px;
-                right: 15px;
+                width: 30px; /* Smaller close button for mobile */
+                height: 30px;
+                font-size: 18px;
+                top: 8px;
+                right: 8px;
             }
             #back-button {
                 font-size: 24px;
@@ -764,6 +766,15 @@
             controls.autoRotate = false;
             tooltip.style.display = 'none';
 
+            // Hide other spheres to prevent artifacts
+            transitionSphere.visible = false;
+            blueSphere.visible = false;
+
+            // Reset particles and lights
+            particlesContainer.innerHTML = '';
+            transitionLight.intensity = 0;
+            blueLight.intensity = 0;
+
             // Fade out existing text meshes and UI text
             textMeshes.forEach(mesh => {
                 new TWEEN.Tween(mesh.material)
@@ -813,6 +824,7 @@
             }
             
             shrinkTween.onComplete(() => {
+                // Apply material change after shrink
                 sphere.material = targetMaterial;
                 sphereState = toState;
                 backButton.style.display = toState === "grey" ? 'none' : 'block';
