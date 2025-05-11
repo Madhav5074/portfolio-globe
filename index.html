@@ -12,7 +12,8 @@
             background: radial-gradient(circle at center, #2a2a4e 0%, #1a1a2e 100%);
             height: 100vh; 
             display: flex; 
-            flex-direction: column;Occupancy: none;
+            flex-direction: column;
+            touch-action: none;
             font-family: 'Poppins', sans-serif;
         }
         canvas { 
@@ -37,6 +38,9 @@
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease; 
             animation: fadeIn 1s ease-in-out;
             backdrop-filter: blur(8px);
+        }
+        #info.blue-state {
+            font-size: 40px; /* Larger font size for blue globe state */
         }
         #info:hover {
             transform: translateY(-5px) scale(1.05); 
@@ -173,7 +177,7 @@
             position: absolute;
             top: 20px;
             right: 20px;
-            color: #800080;
+            color: #800080; /* Default purple for purple globe */
             font-family: 'Poppins', sans-serif;
             font-size: 32px;
             font-weight: 700;
@@ -190,6 +194,9 @@
             z-index: 25;
             touch-action: manipulation;
             pointer-events: auto;
+        }
+        #back-button.blue-state {
+            color: #000066; /* Dark blue for blue globe */
         }
         #back-button:hover {
             transform: translateY(-5px) scale(1.05);
@@ -291,6 +298,9 @@
                 left: 12px; 
                 padding: 10px 20px; 
                 border-radius: 10px;
+            }
+            #info.blue-state {
+                font-size: 30px; /* Adjusted larger font size for mobile */
             }
             #info-note {
                 font-size: 12px;
@@ -508,7 +518,9 @@
             { name: "Github", details: "My projects and contributions on Github" },
             { name: "LinkedIn", details: "Connect with me on LinkedIn" },
             { name: "Email", details: "Reach out via email" },
-            { name: "Unstop", details: "My profile on Unstop" }
+            { name: "Unstop", details: "My profile on Unstop" },
+            { name: "About Me", details: "Learn more about my background and interests" },
+            { name: "Phone No", details: "Contact me directly via phone" }
         ];
 
         let sphereState = "grey";
@@ -810,8 +822,22 @@
                 backButton.style.display = toState === "grey" ? 'none' : 'block';
                 
                 // Update text content after fade-out
-                infoDiv.childNodes[0].textContent = toState === "grey" ? "Madhav Kalra" : toState === "purple" ? "My Skills Portfolio" : "My Contact Information";
-                infoNote.textContent = toState === "grey" ? "Marketing Mind Meets Code Craft" : "Click a skill to learn more!";
+                if (toState === "grey") {
+                    infoDiv.classList.remove('blue-state');
+                    infoDiv.childNodes[0].textContent = "Madhav Kalra";
+                    infoNote.textContent = "Marketing Mind Meets Code Craft";
+                    backButton.classList.remove('blue-state');
+                } else if (toState === "purple") {
+                    infoDiv.classList.remove('blue-state');
+                    infoDiv.childNodes[0].textContent = "My Skills Portfolio";
+                    infoNote.textContent = "Click a skill to learn more!";
+                    backButton.classList.remove('blue-state');
+                } else if (toState === "blue") {
+                    infoDiv.classList.add('blue-state');
+                    infoDiv.childNodes[0].textContent = "Madhav Kalra";
+                    infoNote.textContent = "Click a skill to learn more!";
+                    backButton.classList.add('blue-state');
+                }
                 bottomNote.style.display = toState === "grey" ? 'block' : 'none';
                 
                 // Fade in new text
