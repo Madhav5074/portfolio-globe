@@ -151,7 +151,7 @@
             width: 400px;
             height: auto;
             max-height: 80vh;
-            padding: 20px;
+            padding: 25px;
             border-radius: 20px;
             border: 2px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
@@ -165,6 +165,10 @@
             flex-direction: column;
             backface-visibility: hidden;
         }
+        #modal * {
+            color: #ffffff !important;
+            text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
+        }
         #modal h1 {
             color: #ffffff;
             margin-bottom: 10px;
@@ -174,20 +178,19 @@
             text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.4);
             animation: fadeInContent 0.8s ease-in-out;
         }
-        #modal p {
-            color: #f5f5f5;
-            line-height: 1.6;
-            font-size: 1em;
-            font-weight: 400;
-            text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
-            animation: fadeInContent 0.8s ease-in-out;
+        #modal p, #modal a, #modal h3, #modal li, #modal td, #modal th {
+            color: #ffffff;
+        }
+        #modal a:hover {
+            color: #e0e0ff;
+            text-decoration: underline;
         }
         #modal-close {
             position: absolute;
             top: 10px;
             right: 10px;
-            background: #ffffff;
-            color: #6b48ff;
+            background: #000000;
+            color: #ffffff;
             border: none;
             border-radius: 50%;
             width: 40px;
@@ -204,7 +207,7 @@
             transform: scale(1);
         }
         #modal-close:hover {
-            background: #6b48ff;
+            background: #333333;
             color: #ffffff;
             transform: scale(1.15);
             box-shadow: 0 8px 20px rgba(107, 72, 255, 0.7);
@@ -341,24 +344,24 @@
         .timeline .icon {
             margin-right: 10px;
         }
-        .internship-carousel {
+        .experience-carousel {
             display: flex;
             overflow-x: auto;
             gap: 20px;
             padding: 10px;
         }
-        .internship-card {
-            background: rgba(255, 255, 255, 0.1);
+        .experience-card {
+            background: rgba(255, 255, 255, 0.15);
             padding: 15px;
             border-radius: 10px;
             min-width: 200px;
             transition: transform 0.3s;
         }
-        .internship-card:hover {
+        .experience-card:hover {
             transform: scale(1.05);
         }
         .project-card {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.15);
             padding: 15px;
             border-radius: 10px;
             margin-bottom: 10px;
@@ -385,6 +388,14 @@
             padding: 10px;
             text-align: left;
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .typed-cursor {
+            display: inline;
+            color: #ffffff;
+            font-size: 1.1em;
+            vertical-align: middle;
+            margin-left: 2px;
+            line-height: 1.5;
         }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
@@ -475,6 +486,9 @@
             }
             #about-notification span {
                 font-size: 12px;
+            }
+            .typed-cursor {
+                font-size: 1em;
             }
         }
     </style>
@@ -625,22 +639,21 @@
                                 <p>Certification in Data Science, Coursera, 2023</p>
                             </div>
                         </div>
-                        <a href="certificate.pdf" target="_blank">View Certificate</a>
                     ` 
                 },
                 { 
-                    name: "Internships", 
+                    name: "Experience", 
                     details: `
-                        <div class="internship-carousel">
-                            <div class="internship-card">
+                        <div class="experience-carousel">
+                            <div class="experience-card">
                                 <img src="https://via.placeholder.com/50" alt="Company Logo">
-                                <h3>Software Engineering Intern</h3>
+                                <h3>Software Engineering Experience</h3>
                                 <p>[Company Name], Jun 2023 - Aug 2023</p>
                                 <p>Developed a full-stack app using React and Node.js.</p>
                             </div>
-                            <div class="internship-card">
+                            <div class="experience-card">
                                 <img src="https://via.placeholder.com/50" alt="Company Logo">
-                                <h3>Marketing Intern</h3>
+                                <h3>Marketing Experience</h3>
                                 <p>[Company Name], Jan 2023 - May 2023</p>
                                 <p>Created social media campaigns with 20% engagement increase.</p>
                             </div>
@@ -733,7 +746,6 @@
                             <a href="https://github.com/your-username" target="_blank">🖥️</a>
                             <a href="https://linkedin.com/in/your-profile" target="_blank">💼</a>
                         </div>
-                        <a href="resume.pdf" download style="display: inline-block; margin-top: 10px; padding: 10px; background: #6b48ff; color: #fff; border-radius: 5px;">Download Resume</a>
                     ` 
                 },
                 { 
