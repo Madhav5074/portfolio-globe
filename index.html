@@ -171,7 +171,7 @@
         }
         #modal h1 {
             color: #ffffff;
-            margin-bottom: 10px;
+            margin: 0 0 10px 0;
             font-size: 1.8em;
             font-weight: 800;
             letter-spacing: -1px;
@@ -180,6 +180,8 @@
         }
         #modal p, #modal a, #modal h3, #modal li, #modal td, #modal th {
             color: #ffffff;
+            margin: 5px 0;
+            line-height: 1.6;
         }
         #modal a:hover {
             color: #e0e0ff;
@@ -397,13 +399,23 @@
             text-align: left;
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         }
-        .typed-cursor {
+        #typed-bio {
+            line-height: 1.2;
+            display: inline-block;
+        }
+        #typed-bio .typed-wrapper {
             display: inline;
+        }
+        .typed-cursor {
+            display: inline-block;
             color: #ffffff;
-            font-size: 1.1em;
-            vertical-align: middle;
-            margin-left: 2px;
-            line-height: 1.5;
+            font-size: 1em;
+            vertical-align: baseline;
+            margin-left: 4px;
+            line-height: 1;
+            height: 1em;
+            position: relative;
+            top: 0;
         }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
@@ -496,8 +508,13 @@
             #about-notification span {
                 font-size: 12px;
             }
+            #typed-bio {
+                line-height: 1.1;
+            }
             .typed-cursor {
-                font-size: 1em;
+                font-size: 0.9em;
+                height: 0.9em;
+                top: 0;
             }
         }
     </style>
@@ -524,18 +541,34 @@
     </div>
     <div id="particles"></div>
     <button id="back-button" aria-label="Return to main portfolio globe">Back</button>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js" onerror="console.error('Failed to load Three.js'); alert('Failed to load Three.js. Please check your internet connection.');"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js" onerror="console.error('Failed to load OrbitControls');"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js" onerror="console.error('Failed to load GLTFLoader');"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js" onerror="console.error('Failed to load TWEEN.js');"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js" onerror="console.error('Failed to load Typed.js');"></script>
     <script>
+        console.log('Starting script execution at', new Date().toISOString());
+        
         window.addEventListener('DOMContentLoaded', () => {
-            if (typeof THREE === 'undefined') {
-                console.error('Three.js failed to load. Please check the CDN or network connection.');
-                alert('Failed to load Three.js. Please refresh the page or check your internet connection.');
+            console.log('DOMContentLoaded event fired');
+            
+            // Check for all dependencies
+            const dependencies = [
+                { name: 'THREE', loaded: typeof THREE !== 'undefined' },
+                { name: 'THREE.OrbitControls', loaded: typeof THREE !== 'undefined' && typeof THREE.OrbitControls !== 'undefined' },
+                { name: 'THREE.GLTFLoader', loaded: typeof THREE !== 'undefined' && typeof THREE.GLTFLoader !== 'undefined' },
+                { name: 'TWEEN', loaded: typeof TWEEN !== 'undefined' },
+                { name: 'Typed', loaded: typeof Typed !== 'undefined' }
+            ];
+
+            const missingDependencies = dependencies.filter(dep => !dep.loaded);
+            if (missingDependencies.length > 0) {
+                console.error('Missing dependencies:', missingDependencies);
+                alert('Failed to load required scripts: ' + missingDependencies.map(dep => dep.name).join(', ') + '. Please refresh the page or check your internet connection.');
                 return;
             }
+
+            console.log('All dependencies loaded successfully:', dependencies);
 
             const scene = new THREE.Scene();
             const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -700,7 +733,7 @@
                     ` 
                 },
                 { 
-                    name: "About", 
+                    name: "About Me", 
                     details: "Click to explore contact information" 
                 },
                 { 
@@ -750,7 +783,7 @@
                 { 
                     name: "About Me", 
                     details: `
-                        <p id="typed-bio"></p>
+                        <p id="typed-bio"><span class="typed-wrapper"></span></p>
                         <div class="social-links">
                             <a href="https://github.com/your-username" target="_blank">🖥️</a>
                             <a href="https://linkedin.com/in/your-profile" target="_blank">💼</a>
@@ -773,12 +806,27 @@
             let exploredSkills = new Set();
 
             const FIXED_GREY_FACE_INDICES = [2, 12, 22, 32, 42, 52, 62, 72];
+            const FIXED_BLUE_FACE_INDICES = [0, 5, 10, 15, 20, 25]; // Front/top faces for better visibility
 
             const loader = new THREE.FontLoader();
-            loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', (loadedFont) => {
-                font = loadedFont;
-                updateTextMeshes();
-            });
+            const fontUrl = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/helvetiker_bold.typeface.json';
+            console.log('Attempting to load font from:', fontUrl);
+            loader.load(
+                fontUrl,
+                (loadedFont) => {
+                    console.log('Font loaded successfully');
+                    font = loadedFont;
+                    updateTextMeshes();
+                },
+                undefined,
+                (error) => {
+                    console.error('Failed to load font:', error);
+                    alert('Failed to load font for 3D text. Some features may not work as expected.');
+                    // Proceed without font-dependent features
+                    font = null;
+                    updateTextMeshes();
+                }
+            );
 
             function getFaceCentroid(positions, faceIndex) {
                 const v1 = new THREE.Vector3(
@@ -840,7 +888,10 @@
             }
 
             function updateTextMeshes() {
-                if (!font) return;
+                if (!font) {
+                    console.warn('Font not loaded, skipping text mesh creation');
+                    return;
+                }
                 textMeshes.forEach(mesh => {
                     sphere.remove(mesh);
                     mesh.geometry.dispose();
@@ -855,7 +906,9 @@
                 const skillCount = currentSkills.length;
                 const selectedFaceIndices = sphereState === "grey" 
                     ? FIXED_GREY_FACE_INDICES 
-                    : selectSeparatedFaceIndices(positions, totalFaces, Math.max(skillCount, totalFaces));
+                    : sphereState === "blue" 
+                        ? FIXED_BLUE_FACE_INDICES 
+                        : selectSeparatedFaceIndices(positions, totalFaces, Math.max(skillCount, totalFaces));
                 currentSkills.forEach((skill, skillIndex) => {
                     const faceIndex = selectedFaceIndices[skillIndex % selectedFaceIndices.length];
                     const centroid = getFaceCentroid(positions, faceIndex)
@@ -1092,6 +1145,7 @@
                     const repoList = repos.map(repo => `<p>${repo.name}: ${repo.description || 'No description'}</p>`).join('');
                     document.getElementById('github-repos').innerHTML = repoList;
                 } catch (error) {
+                    console.error('Failed to fetch GitHub repos:', error);
                     document.getElementById('github-repos').innerHTML = 'Failed to load repositories.';
                 }
             }
@@ -1220,7 +1274,7 @@
                 sphere.material.color.set(originalColor);
                 if (sphereState === "grey" && skill.name === "skills") {
                     animateSphereTransition("grey", "purple");
-                } else if (sphereState === "grey" && skill.name === "About") {
+                } else if (sphereState === "grey" && skill.name === "About Me") {
                     animateSphereTransition("grey", "blue");
                 } else {
                     tooltip.style.display = 'none';
@@ -1236,7 +1290,7 @@
                     } else if (skill.name === "Projects") {
                         setTimeout(initProjectPreview, 100);
                     } else if (skill.name === "About Me") {
-                        new Typed('#typed-bio', {
+                        new Typed('.typed-wrapper', {
                             strings: ['Marketing enthusiast turned coder.', 'Passionate about building immersive web experiences.', 'Let’s create something amazing together!'],
                             typeSpeed: 50,
                             backSpeed: 25,
@@ -1426,7 +1480,16 @@
                 renderer.render(scene, camera);
             }
             setTimeout(ensureGlobeRender, 1000);
+
+            console.log('Script execution completed successfully');
         });
+
+        // Global error handler
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error('Global error:', { message, source, lineno, colno, error });
+            alert('A runtime error occurred: ' + message + '. Please check the console for details.');
+            return true;
+        };
     </script>
 </body>
 </html>
