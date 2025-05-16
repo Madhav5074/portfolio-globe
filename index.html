@@ -698,14 +698,26 @@
                             <div class="experience-card">
                                 <img src="https://via.placeholder.com/50" alt="Company Logo">
                                 <h3>Software Engineering Experience</h3>
-                                <p>[Company Name], Jun 2023 - Aug 2023</p>
+                                <p>TechCorp, Jun 2023 - Aug 2023</p>
                                 <p>Developed a full-stack app using React and Node.js.</p>
                             </div>
                             <div class="experience-card">
                                 <img src="https://via.placeholder.com/50" alt="Company Logo">
                                 <h3>Marketing Experience</h3>
-                                <p>[Company Name], Jan 2023 - May 2023</p>
+                                <p>MarketPro, Jan 2023 - May 2023</p>
                                 <p>Created social media campaigns with 20% engagement increase.</p>
+                            </div>
+                            <div class="experience-card">
+                                <img src="https://via.placeholder.com/50" alt="Company Logo">
+                                <h3>Data Analyst Intern</h3>
+                                <p>DataInsight, Sep 2022 - Dec 2022</p>
+                                <p>Analyzed customer data to improve sales strategies by 15%.</p>
+                            </div>
+                            <div class="experience-card">
+                                <img src="https://via.placeholder.com/50" alt="Company Logo">
+                                <h3>Web Development Intern</h3>
+                                <p>WebSolutions, Jun 2022 - Aug 2022</p>
+                                <p>Built responsive websites using HTML, CSS, and JavaScript.</p>
                             </div>
                         </div>
                     ` 
@@ -922,7 +934,7 @@
                 currentSkills.forEach((skill, skillIndex) => {
                     const faceIndex = selectedFaceIndices[skillIndex % selectedFaceIndices.length];
                     const centroid = getFaceCentroid(positions, faceIndex)
-                        .multiplyScalar(isMobile ? (sphereState === "grey" ? 5.2 : 5.0) : (sphereState === "grey" ? 5.9 : 5.7));
+                        .multiplyScalar(isMobile ? (sphereState === "grey" ? 5.2 : 5.0) : (sphereState === "grey" ? 5.9 : 5.9));
                     const textSize = isMobile ? 0.25 : 0.4;
                     const textGeometry = new THREE.TextGeometry(skill.name, {
                         font: font,
