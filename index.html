@@ -1006,8 +1006,8 @@
             let font = null;
             let exploredSkills = new Set();
 
-            const FIXED_GREY_FACE_INDICES = [2, 12, 22, 32, 42, 52, 62, 72];
-            const FIXED_BLUE_FACE_INDICES = [0, 5, 10, 15, 20, 25];
+            const FIXED_GREY_FACE_INDICES = [2, 12, 22, 32, 42, 38, 82, 72];
+            const FIXED_BLUE_FACE_INDICES = [2, 12, 22, 50, 60, 72];
 
             const loader = new THREE.FontLoader();
             const fontUrl = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/helvetiker_bold.typeface.json';
@@ -1553,10 +1553,15 @@
                             });
                         }
                     } else if (skill.name === "Designs") {
-                        setTimeout(() => {
-                            initDesignsCarousel();
-                        }, 300);
-                    }
+    const waitForMediaDisplay = setInterval(() => {
+        const mediaDisplay = document.getElementById('media-display');
+        if (mediaDisplay) {
+            clearInterval(waitForMediaDisplay);
+            initDesignsCarousel();
+        }
+    }, 100);
+    setTimeout(() => clearInterval(waitForMediaDisplay), 3000);
+}
                 }
             }
 
