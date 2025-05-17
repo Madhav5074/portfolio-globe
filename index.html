@@ -370,6 +370,74 @@
         .experience-card:hover {
             transform: scale(1.05);
         }
+        .designs-carousel {
+            display: flex;
+            overflow-x: auto;
+            gap: 15px;
+            padding: 10px;
+        }
+        .designs-card {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 15px;
+            border-radius: 8px;
+            min-width: 120px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s, background 0.3s;
+        }
+        .designs-card:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .designs-card.active {
+            background: rgba(107, 72, 255, 0.5);
+            transform: scale(1.05);
+        }
+        .media-display {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .media-display img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        .media-display video {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        /* Instagram-like layout for Brand Designs */
+        .instagram-layout {
+            text-align: center;
+        }
+        .instagram-logo {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            margin-bottom: 15px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        /* Grid layout for both Brand Designs photos and Posters */
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            justify-items: center;
+        }
+        .media-grid img {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            transition: transform 0.3s ease;
+        }
+        .media-grid a img:hover {
+            transform: scale(1.05);
+        }
         .project-card {
             background: rgba(255, 255, 255, 0.15);
             padding: 15px;
@@ -416,6 +484,33 @@
             height: 1em;
             position: relative;
             top: 0;
+        }
+        #copy-email-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            margin-left: 10px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        #copy-email-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+        .platform-icon {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            image-rendering: auto;
+            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+        }
+        #modal-details {
+            position: relative;
+            padding-top: 60px; /* Add padding to ensure content doesn't overlap the icon */
         }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
@@ -515,6 +610,27 @@
                 font-size: 0.9em;
                 height: 0.9em;
                 top: 0;
+            }
+            .platform-icon {
+                width: 40px;
+                height: 40px;
+                top: 8px;
+                left: 8px;
+            }
+            #modal-details {
+                padding-top: 48px; /* Adjust padding for smaller screens */
+            }
+            .designs-card {
+                min-width: 100px;
+                padding: 8px 12px;
+            }
+            .instagram-logo {
+                width: 80px;
+                height: 80px;
+            }
+            .media-grid img {
+                width: 120px;
+                height: 120px;
             }
         }
     </style>
@@ -702,13 +818,13 @@
                                 <p>Developed a full-stack app using React and Node.js.</p>
                             </div>
                             <div class="experience-card">
-                                <img src="images/Applelogo.png" alt="MarketPro Logo" style="width: 50px; height: 50px; object-fit: contain; image-rendering: auto; margin-bottom: 10px;">
+                                <img src="images/googlelogo.png" alt="MarketPro Logo" style="width: 50px; height: 50px; object-fit: contain; image-rendering: auto; margin-bottom: 10px;">
                                 <h3>Marketing Experience</h3>
                                 <p>MarketPro, Jan 2023 - May 2023</p>
                                 <p>Created social media campaigns with 20% engagement increase.</p>
                             </div>
                             <div class="experience-card">
-                                <img src="images/googlelogo.png" alt="DataInsight Logo" style="width: 50px; height: 50px; object-fit: contain; image-rendering: auto; margin-bottom: 10px;">
+                                <img src="images/Applelogo.png" alt="DataInsight Logo" style="width: 50px; height: 50px; object-fit: contain; image-rendering: auto; margin-bottom: 10px;">
                                 <h3>Data Analyst Intern</h3>
                                 <p>DataInsight, Sep 2022 - Dec 2022</p>
                                 <p>Analyzed customer data to improve sales strategies by 15%.</p>
@@ -723,12 +839,15 @@
                     ` 
                 },
                 { 
-                    name: "Achievements", 
+                    name: "Designs", 
                     details: `
-                        <ul>
-                            <li>Won 1st Place in [Hackathon Name] for AI chatbot.</li>
-                            <li>Published research paper in [Journal Name].</li>
-                        </ul>
+                        <div class="designs-carousel">
+                            <div class="designs-card" data-type="brand-designs">Brand Designs</div>
+                            <div class="designs-card" data-type="posters">Posters</div>
+                        </div>
+                        <div class="media-display" id="media-display">
+                            <p>Select a design type to view media.</p>
+                        </div>
                     ` 
                 },
                 { 
@@ -788,33 +907,49 @@
             const blueSkills = [
                 { 
                     name: "Github", 
-                    details: `<div id="github-repos">Loading...</div>` 
+                    details: `
+                        <img src="images/githublogo.png" alt="Github Logo" class="platform-icon">
+                        <a href="https://github.com/Madhav5074" target="_blank">Visit my GitHub profile</a>
+                    ` 
                 },
                 { 
                     name: "LinkedIn", 
-                    details: `<a href="https://linkedin.com/in/your-profile" target="_blank">Connect with me on LinkedIn</a>` 
+                    details: `
+                        <img src="images/linkedinlogo.png" alt="LinkedIn Logo" class="platform-icon">
+                        <a href="https://www.linkedin.com/in/madhav-kalra-630742324/" target="_blank">Connect with me on LinkedIn</a>
+                    ` 
                 },
                 { 
                     name: "Email", 
-                    details: `<a href="mailto:your.email@example.com">Reach out via email</a>` 
+                    details: `
+                        <img src="images/gmaillogo.png" alt="Gmail Logo" class="platform-icon">
+                        <p style="display: inline;">madhav.kalra23@dsb.edu.in</p>
+                        <button id="copy-email-btn">Copy to Clipboard</button>
+                    ` 
                 },
                 { 
                     name: "Unstop", 
-                    details: `<a href="https://unstop.com/your-profile" target="_blank">My profile on Unstop</a>` 
+                    details: `
+                        <img src="images/instoplogo.png" alt="Unstop Logo" class="platform-icon">
+                        <a href="https://unstop.com/u/Madhav_kalra" target="_blank">My profile on Unstop</a>
+                    ` 
                 },
                 { 
                     name: "About Me", 
                     details: `
                         <p id="typed-bio"><span class="typed-wrapper"></span></p>
                         <div class="social-links">
-                            <a href="https://github.com/your-username" target="_blank">🖥️</a>
-                            <a href="https://linkedin.com/in/your-profile" target="_blank">💼</a>
+                            <a href="https://github.com/Madhav5074" target="_blank">🖥️</a>
+                            <a href="https://www.linkedin.com/in/madhav-kalra-630742324/" target="_blank">💼</a>
                         </div>
                     ` 
                 },
                 { 
-                    name: "Phone No", 
-                    details: `<a href="tel:+1234567890">Contact me: +123-456-7890</a>` 
+                    name: "Whatsapp", 
+                    details: `
+                        <img src="images/whatsapplog.png" alt="Whatsapp Logo" class="platform-icon">
+                        <a href="tel:+919953191920">Contact me: +91 99531 91920</a>
+                    ` 
                 }
             ];
 
@@ -1126,19 +1261,6 @@
                     .start();
             }
 
-            function createAchievementIcon(position) {
-                const iconGeometry = new THREE.SphereGeometry(0.1, 16, 16);
-                const iconMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-                const icon = new THREE.Mesh(iconGeometry, iconMaterial);
-                icon.position.copy(position);
-                scene.add(icon);
-                new TWEEN.Tween(icon.position)
-                    .to({ y: icon.position.y + 2 }, 1500)
-                    .easing(TWEEN.Easing.Cubic.InOut)
-                    .onComplete(() => scene.remove(icon))
-                    .start();
-            }
-
             function initProjectPreview() {
                 const canvas = document.getElementById('project-preview');
                 if (!canvas) return;
@@ -1160,16 +1282,50 @@
                 animatePreview();
             }
 
-            async function fetchGitHubRepos() {
-                try {
-                    const response = await fetch('https://api.github.com/users/your-username/repos?sort=updated&per_page=3');
-                    const repos = await response.json();
-                    const repoList = repos.map(repo => `<p>${repo.name}: ${repo.description || 'No description'}</p>`).join('');
-                    document.getElementById('github-repos').innerHTML = repoList;
-                } catch (error) {
-                    console.error('Failed to fetch GitHub repos:', error);
-                    document.getElementById('github-repos').innerHTML = 'Failed to load repositories.';
-                }
+            function initDesignsCarousel() {
+                const mediaDisplay = document.getElementById('media-display');
+                const cards = document.querySelectorAll('.designs-card');
+                cards.forEach(card => {
+                    card.addEventListener('click', () => {
+                        // Remove active class from all cards
+                        cards.forEach(c => c.classList.remove('active'));
+                        // Add active class to the clicked card
+                        card.classList.add('active');
+                        const type = card.getAttribute('data-type');
+                        let mediaContent = '';
+                        if (type === 'brand-designs') {
+                            mediaContent = `
+                                <div class="instagram-layout">
+                                    <img src="images/gymburylogo.png" alt="Brand Logo" class="instagram-logo">
+                                    <div class="media-grid">
+                                        <img src="images/img1.png" alt="Brand Photo 1">
+                                        <img src="images/img2.png" alt="Brand Photo 2">
+                                        <img src="images/img3.png" alt="Brand Photo 3">
+                                        <img src="images/img4.png" alt="Brand Photo 4">
+                                    </div>
+                                </div>
+                            `;
+                        } else if (type === 'posters') {
+                            mediaContent = `
+                                <div class="media-grid">
+                                    <a href="https://drive.google.com/file/d/12345-your-poster-id/view" target="_blank">
+                                        <img src="https://example.com/images/poster-1.jpg" alt="Poster 1">
+                                    </a>
+                                    <a href="https://drive.google.com/file/d/12345-your-poster-id/view" target="_blank">
+                                        <img src="https://example.com/images/poster-2.jpg" alt="Poster 2">
+                                    </a>
+                                    <a href="https://drive.google.com/file/d/12345-your-poster-id/view" target="_blank">
+                                        <img src="https://example.com/images/poster-3.jpg" alt="Poster 3">
+                                    </a>
+                                    <a href="https://drive.google.com/file/d/12345-your-poster-id/view" target="_blank">
+                                        <img src="https://example.com/images/poster-4.jpg" alt="Poster 4">
+                                    </a>
+                                </div>
+                            `;
+                        }
+                        mediaDisplay.innerHTML = mediaContent;
+                    });
+                });
             }
 
             function animateSphereTransition(fromState, toState) {
@@ -1307,9 +1463,7 @@
                     }, 100);
                     controls.enabled = false;
                     controls.autoRotate = false;
-                    if (skill.name === "Achievements") {
-                        createAchievementIcon(clickPosition);
-                    } else if (skill.name === "Projects") {
+                    if (skill.name === "Projects") {
                         setTimeout(initProjectPreview, 100);
                     } else if (skill.name === "About Me") {
                         new Typed('.typed-wrapper', {
@@ -1318,8 +1472,6 @@
                             backSpeed: 25,
                             loop: true
                         });
-                    } else if (skill.name === "Github") {
-                        fetchGitHubRepos();
                     } else if (skill.name === "Responsibilities") {
                         createParticles('#5555cc', 100);
                         sphere.material.color.set(0x000066);
@@ -1329,6 +1481,24 @@
                         createParticles('rgb(0, 255, 0)', 50);
                         createParticles('rgb(0, 0, 255)', 50);
                         wobbleGlobe();
+                    } else if (skill.name === "Email") {
+                        const copyButton = document.getElementById('copy-email-btn');
+                        if (copyButton) {
+                            copyButton.addEventListener('click', () => {
+                                const email = 'madhav.kalra23@dsb.edu.in';
+                                navigator.clipboard.writeText(email).then(() => {
+                                    copyButton.textContent = 'Copied!';
+                                    setTimeout(() => {
+                                        copyButton.textContent = 'Copy to Clipboard';
+                                    }, 2000);
+                                }).catch(err => {
+                                    console.error('Failed to copy email:', err);
+                                    copyButton.textContent = 'Failed to Copy';
+                                });
+                            });
+                        }
+                    } else if (skill.name === "Designs") {
+                        setTimeout(initDesignsCarousel, 100);
                     }
                 }
             }
