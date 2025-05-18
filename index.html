@@ -1330,52 +1330,53 @@
             }
 
             function initDesignsCarousel() {
-                const mediaDisplay = document.getElementById('media-display');
-                const cards = document.querySelectorAll('.designs-card');
-                if (!mediaDisplay || cards.length === 0) {
-                    console.error('Designs carousel initialization failed: media-display or cards not found');
-                    mediaDisplay.innerHTML = '<p>Error: Failed to initialize designs carousel.</p>';
-                    return;
-                }
-                cards.forEach(card => {
-                    card.removeEventListener('click', card.clickHandler);
-                    card.clickHandler = () => {
-                        console.log(`Design card clicked: ${card.getAttribute('data-type')}`);
-                        cards.forEach(c => c.classList.remove('active'));
-                        card.classList.add('active');
-                        const type = card.getAttribute('data-type');
-                        let mediaContent = '';
-                        if (type === 'brand-designs') {
-                            mediaContent = `
-                                <a href="https://www.instagram.com/gymbury?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" class="button">Visit Brand Designs</a>
-                            `;
-                        } else if (type === 'posters') {
-                            mediaContent = `
-                                <a href="https://drive.google.com/drive/folders/placeholder" target="_blank" class="button">View Posters</a>
-                            `;
-                        } else if (type === 'ai-designs') {
-                            mediaContent = `
-                                <button id="ai-designs-btn">See AI Created Designs</button>
-                            `;
-                        } else {
-                            mediaContent = `<p>Content not available for type: ${type}</p>`;
-                        }
-                        mediaDisplay.innerHTML = mediaContent || '<p>Error: Failed to load media content.</p>';
-                        console.log(`Media display updated with type: ${type}`, mediaDisplay.innerHTML);
-                        if (type === 'ai-designs') {
-                            const aiButton = document.getElementById('ai-designs-btn');
-                            if (aiButton) {
-                                aiButton.removeEventListener('click', aiButton.clickHandler);
-                                aiButton.clickHandler = () => {
-                                    window.open('https://www.threads.net/@youraccount', '_blank');
-                                };
-                                aiButton.addEventListener('click', aiButton.clickHandler);
-                            }
-                        }
-                    };
-                    card.addEventListener('click', card.clickHandler);
-                });
+    const mediaDisplay = document.getElementById('media-display');
+    const cards = document.querySelectorAll('.designs-card');
+    if (!mediaDisplay || cards.length === 0) {
+        console.error('Designs carousel initialization failed: media-display or cards not found');
+        mediaDisplay.innerHTML = '<p>Error: Failed to initialize designs carousel.</p>';
+        return;
+    }
+
+    cards.forEach(card => {
+        card.removeEventListener('click', card.clickHandler);
+        card.clickHandler = () => {
+            cards.forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+            const type = card.getAttribute('data-type');
+            let mediaContent = '';
+
+            if (type === 'brand-designs') {
+                mediaContent = `
+                    <a href="https://www.instagram.com/gymbury?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" class="button">Visit Brand Designs</a>
+                `;
+            } else if (type === 'posters') {
+                mediaContent = `
+                    <a href="https://drive.google.com/drive/folders/placeholder" target="_blank" class="button">View Posters</a>
+                `;
+            } else if (type === 'ai-designs') {
+                mediaContent = `
+                    <button id="ai-designs-btn" class="button">See AI Created Designs</button>
+                `;
+            } else {
+                mediaContent = `<p>Content not available for type: ${type}</p>`;
             }
+
+            mediaDisplay.innerHTML = mediaContent;
+
+            if (type === 'ai-designs') {
+                const aiButton = document.getElementById('ai-designs-btn');
+                if (aiButton) {
+                    aiButton.addEventListener('click', () => {
+                        window.open('https://www.threads.net/@youraccount', '_blank');
+                    });
+                }
+            }
+        };
+        card.addEventListener('click', card.clickHandler);
+    });
+}
+
 
             function animateSphereTransition(fromState, toState) {
                 if (isTransitioning) return;
@@ -1553,14 +1554,21 @@
                             });
                         }
                     } else if (skill.name === "Designs") {
-    const waitForMediaDisplay = setInterval(() => {
-        const mediaDisplay = document.getElementById('media-display');
-        if (mediaDisplay) {
-            clearInterval(waitForMediaDisplay);
-            initDesignsCarousel();
-        }
-    }, 100);
-    setTimeout(() => clearInterval(waitForMediaDisplay), 3000);
+    setTimeout(() => {
+        const cards = document.querySelectorAll('.designs-card');
+        cards.forEach(card => {
+            card.addEventListener('click', () => {
+                const type = card.getAttribute('data-type');
+                if (type === 'brand-designs') {
+                    window.open('https://www.instagram.com/gymbury?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==', '_blank');
+                } else if (type === 'posters') {
+                    window.open('https://drive.google.com/drive/folders/placeholder', '_blank');
+                } else if (type === 'ai-designs') {
+                    window.open('https://www.threads.net/@youraccount', '_blank');
+                }
+            });
+        });
+    }, 50);
 }
                 }
             }
